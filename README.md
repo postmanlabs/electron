@@ -29,7 +29,7 @@ The preferred method is to install Electron as a development dependency in your
 app:
 
 ```sh
-npm install electron --save-dev [--save-exact]
+npm install @postman/electron --save-dev [--save-exact]
 ```
 
 The `--save-exact` flag is recommended for Electron prior to version 2, as it does not follow semantic
