@@ -13,8 +13,12 @@ REM echo "Building electron in debug mode"
 REM CALL python script\build.py -c D
 REM if %errorlevel% neq 0 exit /b %errorlevel%
 
+echo "Zipping the artifacts"
+CALL Compress-Archive -Force -Path out\D -DestinationPath out\D.zip
+if %errorlevel% neq 0 exit /b %errorlevel%
+
 echo "Uploading the artifacts"
-CALL buildkite-agent artifact upload "out/D/**/*"
+CALL buildkite-agent artifact upload "out/D.zip"
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 exit /b

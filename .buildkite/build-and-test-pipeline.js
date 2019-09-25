@@ -1,3 +1,9 @@
+function waitStep() {
+  return {
+    wait: true
+  }
+}
+
 function buildStepForWindows () {
   return {
     label: ':windows: :electron: Build',
@@ -23,6 +29,7 @@ function testStepForWindows () {
 function generateBuildPipeline () {
   return [
     buildStepForWindows(),
+    waitStep(),
     testStepForWindows()
   ];
 }
