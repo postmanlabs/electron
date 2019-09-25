@@ -1,7 +1,18 @@
 function buildStepForWindows () {
   return {
-    label: ':windows: :electron:',
-    command: '.\\.buildkite\\windows\\build',
+    label: ':windows: :electron: Build',
+    command: '.\\.buildkite\\windows\\build-and-upload',
+    agents: [
+      'os=windows',
+      'queue=electron-build'
+    ]
+  };
+}
+
+function testStepForWindows () {
+  return {
+    label: ':windows: :electron: Test',
+    command: '.\\.buildkite\\windows\\run-tests',
     agents: [
       'os=windows',
       'queue=electron-build'
@@ -11,7 +22,8 @@ function buildStepForWindows () {
 
 function generateBuildPipeline () {
   return [
-    buildStepForWindows()
+    buildStepForWindows(),
+    testStepForWindows()
   ];
 }
 
