@@ -21,7 +21,7 @@ echo "Uploading the artifacts"
 CALL buildkite-agent artifact upload "out/D.zip"
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-echo "Post-Cleanup: Running complete cleanup"
-CALL npm run clean
+echo "Post-Cleanup: Cleaning up only dist/* and out/*"
+CALL npm run clean-build
 
 exit /b
