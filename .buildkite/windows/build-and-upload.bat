@@ -1,8 +1,8 @@
 SETLOCAL ENABLEDELAYEDEXPANSION
 
 REM (@TODO check do we need to cleanup everything or just the dist & out directories)
-echo "Cleaning up"
-CALL npm run clean-build
+echo "Pre-Cleanup: Running complete cleanup"
+CALL npm run clean
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Running bootstrap command"
@@ -20,5 +20,8 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 echo "Uploading the artifacts"
 CALL buildkite-agent artifact upload "out/D.zip"
 if %errorlevel% neq 0 exit /b %errorlevel%
+
+echo "Post-Cleanup: Running complete cleanup"
+CALL npm run clean
 
 exit /b

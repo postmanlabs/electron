@@ -1,6 +1,6 @@
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-echo "Cleaning up dist/* and out/*"
+echo "Pre-Cleanup: Cleaning up only dist/* and out/*"
 CALL npm run clean-build
 if %errorlevel% neq 0 exit /b %errorlevel%
 
@@ -19,5 +19,8 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 echo "Running verify ffmpeg"
 CALL python script\verify-ffmpeg.py
 if %errorlevel% neq 0 exit /b %errorlevel%
+
+echo "Post-Cleanup: Cleaning up only dist/* and out/*"
+CALL npm run clean-build
 
 exit /b
