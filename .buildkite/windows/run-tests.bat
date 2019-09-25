@@ -5,7 +5,7 @@ CALL npm run clean-build
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Downloading the artifact"
-CALL buildkite-agent artifact download D.zip out\
+CALL buildkite-agent artifact download out\D.zip .
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Unzipping the artifact"
