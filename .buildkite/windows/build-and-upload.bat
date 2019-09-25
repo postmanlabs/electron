@@ -14,7 +14,7 @@ REM CALL python script\build.py -c D
 REM if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Zipping the artifacts"
-CALL Compress-Archive -Force -Path out\D -DestinationPath out\D.zip
+CALL powershell Compress-Archive -Force -Path out\D -DestinationPath out\D.zip
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Uploading the artifacts"

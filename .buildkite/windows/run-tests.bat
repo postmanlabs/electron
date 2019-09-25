@@ -9,7 +9,7 @@ CALL buildkite-agent artifact download D.zip out\
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Unzipping the artifact"
-CALL Expand-Archive -Force -LiteralPath out\D.zip -DestinationPath out\
+CALL powershell Expand-Archive -Force -LiteralPath out\D.zip -DestinationPath out\
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Running test suite"
