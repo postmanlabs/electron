@@ -27,6 +27,11 @@ function testStepForWindows () {
 }
 
 function generateBuildPipeline () {
+  // Do not run the pipeline if a PR has not been raised yet
+  if (process.env.BUILDKITE_PULL_REQUEST === 'false') {
+    return [];
+  }
+
   return [
     buildStepForWindows(),
     waitStep(),
