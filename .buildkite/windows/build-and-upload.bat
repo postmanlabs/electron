@@ -6,7 +6,7 @@ CALL npm run clean
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Running bootstrap command"
-CALL python script\bootstrap.py -v
+CALL python script\bootstrap.py --dev
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo "Building electron in debug mode"
