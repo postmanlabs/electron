@@ -7,7 +7,7 @@ function waitStep() {
 function buildStepForWindows () {
   return {
     label: ':windows: :electron: Build',
-    command: '.\\.buildkite\\windows\\build-and-upload',
+    command: '.\\.buildkite\\windows\\build-and-upload-debug',
     agents: [
       'os=windows',
       'queue=electron-build'
