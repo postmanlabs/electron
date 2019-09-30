@@ -1,16 +1,11 @@
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-REM (@TODO check do we need to cleanup everything or just the dist & out directories)
-echo "Pre-Cleanup: Running complete cleanup"
-CALL npm run clean
-if %errorlevel% neq 0 exit /b %errorlevel%
-
 REM Docs on for loop in cmd: https://ss64.com/nt/for.html
 for %%R in (ia32 x64) do (
   echo "Building for %%R"
 
   echo "1. Running cleanup"
-  CALL npm run clean-build
+  CALL npm run clean
 
   echo "2. Running bootstrap command"
   CALL python script\bootstrap.py --target_arch=%%R
