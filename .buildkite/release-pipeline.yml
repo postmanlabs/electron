@@ -5,3 +5,10 @@ steps:
     agents:
       - "os=windows"
       - "queue=electron-build"
+
+  - label: ":linux: :electron: Package"
+    command:
+      - ".buildkite/linux/build-and-upload-release.sh"
+    agents:
+      - "os=linux"
+      - "queue=electron-build"
