@@ -41,14 +41,13 @@ buildAndUpload() {
   python ./script/create-dist.py
 
   echo "5. Uploading the artifacts"
-  buildkite-agent artifact upload "dist/electron-v*-win32-$arch.zip"
+  buildkite-agent artifact upload "dist/electron-v*-linux-$arch.zip"
 }
 
 main() {
   start_xvfb
 
   buildAndUpload "x64"
-  buildAndUpload "ia32"
 }
 
 main
