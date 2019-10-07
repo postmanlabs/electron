@@ -19,12 +19,12 @@ for %%R in (ia32 x64) do (
   CALL python ./script/create-dist.py
   if %errorlevel% neq 0 exit /b %errorlevel%
 
-  echo "Uploading the artifacts"
+  echo "5. Uploading the artifacts"
   CALL buildkite-agent artifact upload "dist/electron-v*-win32-%%R.zip"
   if %errorlevel% neq 0 exit /b %errorlevel%
 )
 
-echo "Post-Cleanup: Cleaning up only dist/* and out/*"
-CALL npm run clean-build
+echo "Post-Cleanup"
+CALL npm run clean
 
 exit /b
