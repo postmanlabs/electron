@@ -8,6 +8,8 @@ trap cleanup EXIT
 
 cleanup() {
   echo "running cleanup"
+
+  # This step might fail since Xvfb might not be running
   pkill Xvfb || true
   npm run clean
 }
@@ -15,6 +17,8 @@ cleanup() {
 start_xvfb() {
   echo "Starting Xvfb"
   export DISPLAY=:99
+
+  # This step might fail since Xvfb might not be running
   pkill Xvfb || true
   Xvfb :99 -ac &
 }

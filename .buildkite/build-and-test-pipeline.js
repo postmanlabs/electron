@@ -23,7 +23,7 @@ function buildStepForLinux () {
     command: [
       'npm run clean',
       'python script/bootstrap.py --dev',
-      'python script/build.py -c D',
+      'python script/build.py -c D', // build in Debug mode
       'zip -ryq out/D-linux.zip out/D',
       'buildkite-agent artifact upload "out/D-linux.zip"',
       'npm run clean-build'
