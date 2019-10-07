@@ -1,0 +1,7 @@
+steps:
+  - label: ":windows: :electron: Package"
+    command:
+      - ".\\.buildkite\\windows\\build-and-upload-release"
+    agents:
+      - "os=windows"
+      - "queue=electron-build"
