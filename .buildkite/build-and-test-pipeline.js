@@ -15,12 +15,41 @@ function buildStepForWindows () {
   };
 }
 
+function buildStepForLinux () {
+  return {
+    label: ':linux: :electron: Build',
+    command: [
+      'npm run clean',
+      'python script/bootstrap.py --dev',
+      'python script/build.py -c D',
+      'zip -ryq out/D-linux.zip out/D',
+      'buildkite-agent artifact upload "out/D-linux.zip"',
+      'npm run clean-build'
+    ],
+    agents: [
+      'os=linux',
+      'queue=electron-build'
+    ]
+  };
+}
+
 function testStepForWindows () {
   return {
     label: ':windows: :electron: Test',
     command: '.\\.buildkite\\windows\\run-tests',
     agents: [
       'os=windows',
+      'queue=electron-build'
+    ]
+  };
+}
+
+function testStepForLinux () {
+  return {
+    label: ':linux: :electron: Test',
+    command: ['.buildkite/linux/run-tests.sh'],
+    agents: [
+      'os=linux',
       'queue=electron-build'
     ]
   };
@@ -34,8 +63,10 @@ function generateBuildPipeline () {
 
   return [
     buildStepForWindows(),
+    buildStepForLinux(),
     waitStep(),
-    testStepForWindows()
+    testStepForWindows(),
+    testStepForLinux()
   ];
 }
 
