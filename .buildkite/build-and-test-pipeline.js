@@ -7,6 +7,7 @@ function waitStep() {
 function buildStepForWindows () {
   return {
     label: ':windows: :electron: Build',
+    timeout_in_minutes: 60,
     command: '.\\.buildkite\\windows\\build-and-upload',
     agents: [
       'os=windows',
@@ -18,6 +19,7 @@ function buildStepForWindows () {
 function buildStepForLinux () {
   return {
     label: ':linux: :electron: Build',
+    timeout_in_minutes: 60,
     command: [
       'npm run clean',
       'python script/bootstrap.py --dev',
@@ -36,6 +38,7 @@ function buildStepForLinux () {
 function testStepForWindows () {
   return {
     label: ':windows: :electron: Test',
+    timeout_in_minutes: 60,
     command: '.\\.buildkite\\windows\\run-tests',
     agents: [
       'os=windows',
@@ -47,6 +50,7 @@ function testStepForWindows () {
 function testStepForLinux () {
   return {
     label: ':linux: :electron: Test',
+    timeout_in_minutes: 60,
     command: ['.buildkite/linux/run-tests.sh'],
     agents: [
       'os=linux',
