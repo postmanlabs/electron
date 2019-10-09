@@ -16,20 +16,24 @@ function buildStepForWindows () {
   };
 }
 
-function buildStepForLinux () {
+/**
+ * Returns the build step for linux or darwin
+ * @param {String} platform can be 'linux' or 'darwin'
+ */
+function buildStepForNix (platform) {
   return {
-    label: ':linux: :electron: Build',
+    label: `:${platform}: :electron: Build`,
     timeout_in_minutes: 60,
     command: [
       'npm run clean',
       'python script/bootstrap.py --dev',
       'python script/build.py -c D', // build in Debug mode
-      'zip -ryq out/D-linux.zip out/D',
-      'buildkite-agent artifact upload "out/D-linux.zip"',
+      `zip -ryq out/D-${platform}.zip out/D`,
+      `buildkite-agent artifact upload "out/D-${platform}.zip"`,
       'npm run clean-build'
     ],
     agents: [
-      'os=linux',
+      `os=${platform}`,
       'queue=electron-build'
     ]
   };
@@ -47,13 +51,13 @@ function testStepForWindows () {
   };
 }
 
-function testStepForLinux () {
+function testStepForNix (platform) {
   return {
-    label: ':linux: :electron: Test',
+    label: `:${platform}: :electron: Test`,
     timeout_in_minutes: 60,
-    command: ['.buildkite/linux/run-tests.sh'],
+    command: [`.buildkite/nix/run-tests.sh ${platform}`],
     agents: [
-      'os=linux',
+      `os=${platform}`,
       'queue=electron-build'
     ]
   };
@@ -67,10 +71,12 @@ function generateBuildPipeline () {
 
   return [
     buildStepForWindows(),
-    buildStepForLinux(),
+    buildStepForNix('linux'),
+    buildStepForNix('darwin'),
     waitStep(),
     testStepForWindows(),
-    testStepForLinux()
+    testStepForNix('linux'),
+    testStepForNix('darwin'),
   ];
 }
 
