@@ -6,15 +6,28 @@ set -euo pipefail
 # When the script exits or errors out, make sure to do the cleanup
 trap cleanup EXIT
 
+# platform should be one of "linux" or "darwin"
+declare platform="$1"
+
 cleanup() {
   echo "running cleanup"
 
-  # This step might fail since Xvfb might not be running
-  pkill Xvfb || true
+  # Try stopping Xvfb only for Linux platform
+  if [[ "$platform" == "linux" ]]
+  then
+    # This step might fail since Xvfb might not be running
+    pkill Xvfb || true
+  fi
   npm run clean
 }
 
 start_xvfb() {
+  # Start Xvfb only for linux platform
+  if [[ "$platform" != "linux" ]]
+  then
+    return;
+  fi
+
   echo "Starting Xvfb"
   export DISPLAY=:99
 
@@ -24,9 +37,9 @@ start_xvfb() {
 }
 
 download_and_extract_artifact() {
-  echo "Downloading and extracting the artifact"
-  buildkite-agent artifact download out/D-linux.zip .
-  unzip -o out/D-linux.zip
+  echo "Downloading and extracting the artifact D-$platform.zip"
+  buildkite-agent artifact download "out/D-$platform.zip" .
+  unzip -o "out/D-$platform.zip"
 }
 
 run_tests() {

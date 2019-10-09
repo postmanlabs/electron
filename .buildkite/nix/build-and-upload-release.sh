@@ -6,15 +6,28 @@ set -euo pipefail
 # When the script exits or errors out, make sure to do the cleanup
 trap cleanup EXIT
 
+# platform should be one of "linux" or "darwin"
+declare platform="$1"
+
 cleanup() {
   echo "running cleanup"
 
-  # This step might fail since Xvfb might not be running
-  pkill Xvfb || true
+  # Try stopping Xvfb only for Linux platform
+  if [[ "$platform" == "linux" ]]
+  then
+    # This step might fail since Xvfb might not be running
+    pkill Xvfb || true
+  fi
   npm run clean
 }
 
 start_xvfb() {
+  # Start Xvfb only for linux platform
+  if [[ "$platform" != "linux" ]]
+  then
+    return;
+  fi
+
   echo "Starting Xvfb"
   export DISPLAY=:99
 
@@ -26,7 +39,7 @@ start_xvfb() {
 buildAndUpload() {
   local arch="$1"
 
-  echo "Building for $arch"
+  echo "Building for $platform $arch"
 
   echo "1. Running cleanup"
   npm run clean
@@ -41,7 +54,7 @@ buildAndUpload() {
   python ./script/create-dist.py
 
   echo "5. Uploading the artifacts"
-  buildkite-agent artifact upload "dist/electron-v*-linux-$arch.zip"
+  buildkite-agent artifact upload "dist/electron-v*-$platform-$arch.zip"
 }
 
 main() {
