@@ -8,7 +8,7 @@ steps:
 
   - label: ":linux: :electron: Package"
     command:
-      - ".buildkite/linux/build-and-upload-release.sh"
+      - ".buildkite/nix/build-and-upload-release.sh linux"
     agents:
       - "os=linux"
       - "queue=electron-build"
