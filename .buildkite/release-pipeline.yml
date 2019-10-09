@@ -12,3 +12,10 @@ steps:
     agents:
       - "os=linux"
       - "queue=electron-build"
+
+  - label: ":mac: :electron: Package"
+    command:
+      - ".buildkite/nix/build-and-upload-release.sh darwin"
+    agents:
+      - "os=darwin"
+      - "queue=electron-build"
