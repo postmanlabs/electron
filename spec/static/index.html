@@ -82,7 +82,7 @@
       mocha.addFile(path.resolve(__dirname, '..', crashSpec))
     }
 
-    const runner = mocha.run(() => {
+    const runner = mocha.retries(2).run(() => {
       if (isCi && runner.hasOnly) {
         try {
           throw new Error('A spec contains a call to it.only or describe.only and should be reverted.')
