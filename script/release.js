@@ -44,7 +44,7 @@ async function getDraftRelease (version, skipValidation) {
     if (versionToCheck.indexOf('beta') > -1) {
       check(draft.prerelease, 'draft is a prerelease')
     }
-    check(draft.body.length > 50 && !draft.body.includes('(placeholder)'), 'draft has release notes')
+    check(draft.body.length > 0 && !draft.body.includes('(placeholder)'), 'draft has release notes')
     check((failureCount === 0), `Draft release looks good to go.`, true)
   }
   return draft
@@ -199,8 +199,8 @@ async function createReleaseShasums (release) {
     })
   }
   console.log(`Creating and uploading the release ${fileName}.`)
-  let scriptPath = path.join(__dirname, 'merge-electron-checksums.py')
-  let checksums = runScript(scriptPath, ['-v', pkgVersion])
+  let scriptPath = path.join(__dirname, 'merge-electron-checksums_local.js')
+  let checksums = runScript(scriptPath, [])
   console.log(`${pass} Generated release SHASUMS.`)
   let filePath = await saveShaSumFile(checksums, fileName)
   console.log(`${pass} Created ${fileName} file.`)
@@ -271,8 +271,8 @@ async function makeRelease (releaseToValidate) {
   } else {
     checkVersion()
     let draftRelease = await getDraftRelease()
-    uploadNodeShasums()
-    uploadIndexJson()
+    // uploadNodeShasums()
+    // uploadIndexJson()
 
     await createReleaseShasums(draftRelease)
     // Fetch latest version of release before verifying
