@@ -8,11 +8,6 @@ const request = require('request')
 const semver = require('semver')
 const rootPackageJson = require('../package.json')
 
-if (!process.env.ELECTRON_NPM_OTP) {
-  console.error('Please set ELECTRON_NPM_OTP')
-  process.exit(1)
-}
-
 const github = new GitHubApi({
   // debug: true,
   headers: { 'User-Agent': 'electron-npm-publisher' },
@@ -109,33 +104,11 @@ new Promise((resolve, reject) => {
     })
   })
 })
-.then(async (release) => {
-  const currentBranch = await getCurrentBranch()
-
-  if (release.tag_name.indexOf('nightly') > 0) {
-    if (currentBranch === 'master') {
-      npmTag = 'nightly'
-    } else {
-      npmTag = `nightly-${currentBranch}`
-    }
-  } else {
-    if (currentBranch === 'master') {
-      // This should never happen, master releases should be nightly releases
-      // this is here just-in-case
-      npmTag = 'master'
-    } else if (!release.prerelease) {
-      // Tag the release with a `2-0-x` style tag
-      npmTag = currentBranch
-    } else {
-      // Tag the release with a `beta-3-0-x` style tag
-      npmTag = `beta-${currentBranch}`
-    }
-  }
-})
 .then(() => childProcess.execSync('npm pack', { cwd: tempDir }))
 .then(() => {
   // test that the package can install electron prebuilt from github release
-  const tarballPath = path.join(tempDir, `${rootPackageJson.name}-${rootPackageJson.version}.tgz`)
+  const sanitizedPackageName = rootPackageJson.name.replace(/\//g, '-')
+  const tarballPath = path.join(tempDir, `${sanitizedPackageName}-${rootPackageJson.version}.tgz`)
   return new Promise((resolve, reject) => {
     childProcess.execSync(`npm install ${tarballPath} --force --silent`, {
       env: Object.assign({}, process.env, { electron_config_cache: tempDir }),
@@ -144,19 +117,10 @@ new Promise((resolve, reject) => {
     resolve(tarballPath)
   })
 })
-.then((tarballPath) => childProcess.execSync(`npm publish ${tarballPath} --tag ${npmTag} --otp=${process.env.ELECTRON_NPM_OTP}`))
+.then((tarballPath) => childProcess.execSync(`npm publish ${tarballPath} --tag ${npmTag}`))
 .then(() => {
-  const currentTags = JSON.parse(childProcess.execSync('npm show electron dist-tags --json').toString())
   const localVersion = rootPackageJson.version
-  const parsedLocalVersion = semver.parse(localVersion)
-  if (parsedLocalVersion.prerelease.length === 0 &&
-        semver.gt(localVersion, currentTags.latest)) {
-    childProcess.execSync(`npm dist-tag add electron@${localVersion} latest --otp=${process.env.ELECTRON_NPM_OTP}`)
-  }
-  if (parsedLocalVersion.prerelease[0] === 'beta' &&
-        semver.gt(localVersion, currentTags.beta)) {
-    childProcess.execSync(`npm dist-tag add electron@${localVersion} beta --otp=${process.env.ELECTRON_NPM_OTP}`)
-  }
+  childProcess.execSync(`npm dist-tag add electron@${localVersion} latest`)
 })
 .catch((err) => {
   console.error(`Error: ${err}`)
