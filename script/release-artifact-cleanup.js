@@ -56,7 +56,7 @@ async function revertBumpCommit (tag) {
 async function deleteDraft (releaseId, targetRepo) {
   try {
     const result = await github.repos.getRelease({
-      owner: 'electron',
+      owner: 'postmanlabs',
       repo: targetRepo,
       id: parseInt(releaseId, 10)
     })
@@ -66,7 +66,7 @@ async function deleteDraft (releaseId, targetRepo) {
       return false
     } else {
       await github.repos.deleteRelease({
-        owner: 'electron',
+        owner: 'postmanlabs',
         repo: targetRepo,
         release_id: result.data.id
       })
@@ -82,7 +82,7 @@ async function deleteDraft (releaseId, targetRepo) {
 async function deleteTag (tag, targetRepo) {
   try {
     await github.gitdata.deleteReference({
-      owner: 'electron',
+      owner: 'postmanlabs',
       repo: targetRepo,
       ref: `tags/${tag}`
     })

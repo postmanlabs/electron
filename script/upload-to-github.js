@@ -13,10 +13,10 @@ let fileName = process.argv[3]
 let releaseId = process.argv[4]
 let releaseVersion = process.argv[5]
 
-const targetRepo = releaseVersion.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
+const targetRepo = 'electron'
 
 let githubOpts = {
-  owner: 'electron',
+  owner: 'postmanlabs',
   repo: targetRepo,
   id: releaseId,
   filePath: filePath,
@@ -40,7 +40,7 @@ function uploadToGitHub () {
         if (existingAssets.length > 0) {
           console.log(`${fileName} already exists; will delete before retrying upload.`)
           github.repos.deleteAsset({
-            owner: 'electron',
+            owner: 'postmanlabs',
             repo: targetRepo,
             id: existingAssets[0].id
           }).catch((deleteErr) => {

@@ -41,7 +41,7 @@ const jsonFields = [
   'keywords'
 ]
 
-let npmTag = ''
+let npmTag = 'latest'
 
 new Promise((resolve, reject) => {
   temp.mkdir('electron-npm', (err, dirPath) => {
@@ -73,8 +73,8 @@ new Promise((resolve, reject) => {
   )
 
   return github.repos.getReleases({
-    owner: 'electron',
-    repo: rootPackageJson.version.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
+    owner: 'postmanlabs',
+    repo: 'electron'
   })
 })
 .then((releases) => {

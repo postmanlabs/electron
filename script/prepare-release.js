@@ -15,7 +15,8 @@ const path = require('path')
 const pkg = require('../package.json')
 const readline = require('readline')
 const versionType = args._[0]
-const targetRepo = versionType === 'nightly' ? 'nightlies' : 'electron'
+const owner = 'postmanlabs'
+const targetRepo = 'electron'
 
 // TODO (future) automatically determine version based on conventional commits
 // via conventional-recommended-bump
@@ -76,7 +77,7 @@ async function getReleaseNotes (currentBranch) {
   }
   console.log(`Generating release notes for ${currentBranch}.`)
   let githubOpts = {
-    owner: 'electron',
+    owner,
     repo: targetRepo,
     base: `v${pkg.version}`,
     head: currentBranch
@@ -143,7 +144,7 @@ async function createRelease (branchToTarget, isBeta) {
   let releaseNotes = !newVersion.includes('beta.1') ? await getReleaseNotes(branchToTarget) : ''
   await tagRelease(newVersion)
   const githubOpts = {
-    owner: 'electron',
+    owner,
     repo: targetRepo
   }
   console.log(`Checking for existing draft release.`)

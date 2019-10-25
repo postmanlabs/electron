@@ -16,7 +16,8 @@ const fail = '\u2717'.red
 const sumchecker = require('sumchecker')
 const temp = require('temp').track()
 const { URL } = require('url')
-const targetRepo = pkgVersion.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
+const owner = 'postmanlabs'
+const targetRepo = 'electron'
 let failureCount = 0
 
 const github = new GitHub({
@@ -25,7 +26,7 @@ const github = new GitHub({
 github.authenticate({type: 'token', token: process.env.ELECTRON_GITHUB_TOKEN})
 
 async function getDraftRelease (version, skipValidation) {
-  let releaseInfo = await github.repos.getReleases({owner: 'electron', repo: targetRepo})
+  let releaseInfo = await github.repos.getReleases({owner, repo: targetRepo})
   let drafts
   let versionToCheck
   if (version) {
@@ -190,7 +191,7 @@ async function createReleaseShasums (release) {
   if (existingAssets.length > 0) {
     console.log(`${fileName} already exists on GitHub; deleting before creating new file.`)
     await github.repos.deleteAsset({
-      owner: 'electron',
+      owner,
       repo: targetRepo,
       id: existingAssets[0].id
     }).catch(err => {
@@ -209,7 +210,7 @@ async function createReleaseShasums (release) {
 
 async function uploadShasumFile (filePath, fileName, release) {
   let githubOpts = {
-    owner: 'electron',
+    owner,
     repo: targetRepo,
     id: release.id,
     filePath,
@@ -244,7 +245,7 @@ function saveShaSumFile (checksums, fileName) {
 
 async function publishRelease (release) {
   let githubOpts = {
-    owner: 'electron',
+    owner,
     repo: targetRepo,
     id: release.id,
     tag_name: release.tag_name,
@@ -299,7 +300,7 @@ async function makeTempDir () {
 async function verifyAssets (release) {
   let downloadDir = await makeTempDir()
   let githubOpts = {
-    owner: 'electron',
+    owner,
     repo: targetRepo,
     headers: {
       Accept: 'application/octet-stream'

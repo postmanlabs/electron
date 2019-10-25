@@ -16,8 +16,6 @@ from lib.config import PLATFORM, get_target_arch,  get_env_var, s3_config, \
 from lib.util import electron_gyp, execute, get_electron_version, \
                      parse_version, scoped_cwd, s3put
 
-
-ELECTRON_REPO = 'electron/electron'
 ELECTRON_VERSION = get_electron_version()
 
 PROJECT_NAME = electron_gyp()['project_name%']
