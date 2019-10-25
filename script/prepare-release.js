@@ -5,7 +5,6 @@ require('colors')
 const args = require('minimist')(process.argv.slice(2), {
   boolean: ['automaticRelease', 'notesOnly', 'stable']
 })
-const ciReleaseBuild = require('./ci-release-build')
 const { execSync } = require('child_process')
 const fail = '\u2717'.red
 const { GitProcess } = require('dugite')
@@ -15,6 +14,7 @@ const path = require('path')
 const pkg = require('../package.json')
 const readline = require('readline')
 const versionType = args._[0]
+const versionToBump = args.version
 const owner = 'postmanlabs'
 const targetRepo = 'electron'
 
@@ -36,7 +36,7 @@ async function getNewVersion (dryRun) {
     console.log(`Bumping for new "${versionType}" version.`)
   }
   let bumpScript = path.join(__dirname, 'bump-version.py')
-  let scriptArgs = [bumpScript, '--bump', versionType]
+  let scriptArgs = [bumpScript, '--bump', versionToBump || versionType]
   if (dryRun) {
     scriptArgs.push('--dry-run')
   }
@@ -75,6 +75,9 @@ async function getReleaseNotes (currentBranch) {
   if (versionType === 'nightly') {
     return 'Nightlies do not get release notes, please compare tags for info'
   }
+
+  return 'Release notes were not generated. WIP'
+
   console.log(`Generating release notes for ${currentBranch}.`)
   let githubOpts = {
     owner,
@@ -180,7 +183,7 @@ async function createRelease (branchToTarget, isBeta) {
     githubOpts.body = releaseNotes
   }
   githubOpts.tag_name = newVersion
-  githubOpts.target_commitish = newVersion.indexOf('nightly') !== -1 ? 'master' : branchToTarget
+  githubOpts.target_commitish = branchToTarget
   const release = await github.repos.createRelease(githubOpts)
     .catch(err => {
       console.log(`${fail} Error creating new release: `, err)
@@ -200,13 +203,6 @@ async function pushRelease (branch) {
         `${pushDetails.stderr}`)
     process.exit(1)
   }
-}
-
-async function runReleaseBuilds (branch) {
-  await ciReleaseBuild(branch, {
-    ghRelease: true,
-    automaticRelease: args.automaticRelease
-  })
 }
 
 async function tagRelease (version) {
@@ -272,7 +268,6 @@ async function prepareRelease (isBeta, notesOnly) {
         await verifyNewVersion()
         await createRelease(currentBranch, isBeta)
         await pushRelease(currentBranch)
-        await runReleaseBuilds(currentBranch)
       } else {
         console.log(`There are no new changes to this branch since the last release, aborting release.`)
         process.exit(1)
@@ -281,4 +276,4 @@ async function prepareRelease (isBeta, notesOnly) {
   }
 }
 
-prepareRelease(!args.stable, args.notesOnly)
+prepareRelease(versionType === 'beta', args.notesOnly)
