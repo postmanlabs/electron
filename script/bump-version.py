@@ -48,9 +48,11 @@ def main():
   curr_version = get_electron_version()
 
   if args.bump not in ['stable', 'beta', 'nightly']:
-    raise Exception('bump must be set to either stable, beta or nightly')
-
-  if is_nightly(curr_version):
+    if not args.bump:
+      raise Exception('bump must be set to either stable, beta or nightly')
+    else:
+      version = args.bump
+  elif is_nightly(curr_version):
     if args.bump == 'nightly':
       version = get_next_nightly(curr_version)
     elif args.bump == 'beta':
