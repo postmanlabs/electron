@@ -9,10 +9,6 @@ trap cleanup EXIT
 # platform should be one of "linux" or "darwin"
 declare platform="$1"
 
-validate_version() {
-  echo "TODO: validate the version using maybe regex"
-}
-
 cleanup() {
   echo "running cleanup"
 
@@ -79,7 +75,6 @@ buildAndUpload() {
 }
 
 main() {
-  validate_version
   start_xvfb
 
   buildAndUpload "x64"
