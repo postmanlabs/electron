@@ -5,6 +5,7 @@ import re
 import sys
 import argparse
 
+from lib.config import enable_verbose_mode
 from lib.util import execute, get_electron_version, parse_version, scoped_cwd, \
 is_nightly, is_beta, is_stable, get_next_nightly, get_next_beta, \
 get_next_stable_from_pre, get_next_stable_from_stable, clean_parse_version
@@ -43,8 +44,15 @@ def main():
     dest='dry_run',
     help='just to check that version number is correct'
   )
+  parser.add_argument(
+    '-v', '--verbose',
+    action='store_true',
+    help='Turn on verbose mode'
+  )
 
   args = parser.parse_args()
+  if args.verbose:
+    enable_verbose_mode()
   curr_version = get_electron_version()
 
   if args.bump not in ['stable', 'beta', 'nightly']:
@@ -101,7 +109,7 @@ def main():
     update_electron_gyp(version, suffix)
     update_win_rc(version, versions)
     update_version_h(versions, suffix)
-    update_info_plist(version)
+    update_info_plist(version + suffix)
     update_package_json(version, suffix)
     tag_version(version, suffix)
 
@@ -119,7 +127,7 @@ def increase_version(versions, index):
 
 def update_electron_gyp(version, suffix):
   pattern = re.compile(" *'version%' *: *'[0-9.]+(-beta[0-9.]*)?(-dev)?"
-    + "(-nightly[0-9.]*)?'")
+    + "(-postman\.[0-9.]*)?(-nightly[0-9.]*)?'")
   with open('electron.gyp', 'r') as f:
     lines = f.readlines()
 
@@ -196,19 +204,12 @@ def update_info_plist(version):
 
 
 def update_package_json(version, suffix):
-  package_json = 'package.json'
-  with open(package_json, 'r') as f:
-    lines = f.readlines()
-
-  for i in range(0, len(lines)):
-    line = lines[i];
-    if 'version' in line:
-      lines[i] = '  "version": "{0}",\n'.format(version + suffix)
-      break
-
-  with open(package_json, 'w') as f:
-    f.write(''.join(lines))
-
+   execute([
+    'npm',
+    'version',
+    version + suffix,
+    '--no-git-tag-version'
+  ])
 
 def tag_version(version, suffix):
   execute([
