@@ -17,6 +17,10 @@ echo "Creating the distribution"
 CALL python ./script/create-dist.py
 if %errorlevel% neq 0 exit /b %errorlevel%
 
+echo "Uploading artifacts to GitHub"
+CALL python ./script/upload.py
+if %errorlevel% neq 0 exit /b %errorlevel%
+
 echo "Uploading the shasum files"
 REM Going inside the directory to avoid saving the files along with the directory name.
 REM Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
