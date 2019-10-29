@@ -70,8 +70,6 @@ async function validateReleaseAssets (release, validatingRelease) {
           console.log(`${fail} error verifyingShasums`, err)
         })
     }
-    const s3Urls = s3UrlsForVersion(release.tag_name)
-    await verifyShasums(s3Urls, true)
   }
 }
 
@@ -90,17 +88,8 @@ function assetsForVersion (version, validatingRelease) {
     `electron-${version}-darwin-x64-dsym.zip`,
     `electron-${version}-darwin-x64-symbols.zip`,
     `electron-${version}-darwin-x64.zip`,
-    `electron-${version}-linux-arm64-symbols.zip`,
-    `electron-${version}-linux-arm64.zip`,
-    `electron-${version}-linux-armv7l-symbols.zip`,
-    `electron-${version}-linux-armv7l.zip`,
-    `electron-${version}-linux-ia32-symbols.zip`,
-    `electron-${version}-linux-ia32.zip`,
     `electron-${version}-linux-x64-symbols.zip`,
     `electron-${version}-linux-x64.zip`,
-    `electron-${version}-mas-x64-dsym.zip`,
-    `electron-${version}-mas-x64-symbols.zip`,
-    `electron-${version}-mas-x64.zip`,
     `electron-${version}-win32-ia32-pdb.zip`,
     `electron-${version}-win32-ia32-symbols.zip`,
     `electron-${version}-win32-ia32.zip`,
@@ -110,34 +99,13 @@ function assetsForVersion (version, validatingRelease) {
     `electron-api.json`,
     `electron.d.ts`,
     `ffmpeg-${version}-darwin-x64.zip`,
-    `ffmpeg-${version}-linux-arm64.zip`,
-    `ffmpeg-${version}-linux-armv7l.zip`,
-    `ffmpeg-${version}-linux-ia32.zip`,
     `ffmpeg-${version}-linux-x64.zip`,
-    `ffmpeg-${version}-mas-x64.zip`,
     `ffmpeg-${version}-win32-ia32.zip`,
     `ffmpeg-${version}-win32-x64.zip`
   ]
   if (!validatingRelease) {
     patterns.push('SHASUMS256.txt')
   }
-  return patterns
-}
-
-function s3UrlsForVersion (version) {
-  const bucket = `https://gh-contractor-zcbenz.s3.amazonaws.com/`
-  const patterns = [
-    `${bucket}atom-shell/dist/${version}/iojs-${version}-headers.tar.gz`,
-    `${bucket}atom-shell/dist/${version}/iojs-${version}.tar.gz`,
-    `${bucket}atom-shell/dist/${version}/node-${version}.tar.gz`,
-    `${bucket}atom-shell/dist/${version}/node.lib`,
-    `${bucket}atom-shell/dist/${version}/win-x64/iojs.lib`,
-    `${bucket}atom-shell/dist/${version}/win-x86/iojs.lib`,
-    `${bucket}atom-shell/dist/${version}/x64/node.lib`,
-    `${bucket}atom-shell/dist/${version}/SHASUMS.txt`,
-    `${bucket}atom-shell/dist/${version}/SHASUMS256.txt`,
-    `${bucket}atom-shell/dist/index.json`
-  ]
   return patterns
 }
 
@@ -171,20 +139,6 @@ function runScript (scriptName, scriptArgs, cwd) {
   }
 }
 
-function uploadNodeShasums () {
-  console.log('Uploading Node SHASUMS file to S3.')
-  let scriptPath = path.join(__dirname, 'upload-node-checksums.py')
-  runScript(scriptPath, ['-v', pkgVersion])
-  console.log(`${pass} Done uploading Node SHASUMS file to S3.`)
-}
-
-function uploadIndexJson () {
-  console.log('Uploading index.json to S3.')
-  let scriptPath = path.join(__dirname, 'upload-index-json.py')
-  runScript(scriptPath, [pkgVersion])
-  console.log(`${pass} Done uploading index.json to S3.`)
-}
-
 async function createReleaseShasums (release) {
   let fileName = 'SHASUMS256.txt'
   let existingAssets = release.assets.filter(asset => asset.name === fileName)
@@ -198,7 +152,7 @@ async function createReleaseShasums (release) {
       console.log(`${fail} Error deleting ${fileName} on GitHub:`, err)
     })
   }
-  console.log(`Creating and uploading the release ${fileName}.`)
+
   let scriptPath = path.join(__dirname, 'merge-electron-checksums_local.js')
   let checksums = runScript(scriptPath, [])
   console.log(`${pass} Generated release SHASUMS.`)
@@ -271,8 +225,6 @@ async function makeRelease (releaseToValidate) {
   } else {
     checkVersion()
     let draftRelease = await getDraftRelease()
-    // uploadNodeShasums()
-    // uploadIndexJson()
 
     await createReleaseShasums(draftRelease)
     // Fetch latest version of release before verifying
@@ -311,7 +263,7 @@ async function verifyAssets (release) {
   let filesToCheck = await Promise.all(release.assets.map(async (asset) => {
     githubOpts.id = asset.id
     let assetDetails = await github.repos.getAsset(githubOpts)
-    await downloadFiles(assetDetails.meta.location, downloadDir, false, asset.name)
+    await downloadFiles(assetDetails.meta.location, downloadDir, true, asset.name)
     return asset.name
   })).catch(err => {
     console.log(`${fail} Error downloading files from GitHub`, err)
@@ -357,7 +309,7 @@ async function verifyShasums (urls, isS3) {
   let filesToCheck = []
   try {
     if (!isS3) {
-      await downloadFiles(urls, downloadDir)
+      await downloadFiles(urls, downloadDir, true)
       filesToCheck = urls.map(url => {
         let currentUrl = new URL(url)
         return path.basename(currentUrl.pathname)
