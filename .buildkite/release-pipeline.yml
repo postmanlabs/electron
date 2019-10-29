@@ -33,7 +33,6 @@ steps:
       - "mkdir dist || true"
       - 'buildkite-agent artifact download "*.sha256sum" dist/'
       - "./script/release.js --skipVersionCheck"
-      - "npm run publish-to-npm"
     agents:
       nix: "true"
       queue: "electron-build"
