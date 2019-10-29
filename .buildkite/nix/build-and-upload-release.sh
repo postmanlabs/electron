@@ -41,20 +41,33 @@ buildAndUpload() {
 
   echo "Building for $platform $arch"
 
-  echo "1. Running cleanup"
+  echo "Running cleanup"
   npm run clean
 
-  echo "2. Running bootstrap command"
+  echo "Running bootstrap command"
   python script/bootstrap.py --target_arch="$arch"
 
-  echo "3. Building electron in release mode"
+  echo "Building electron in release mode"
   python script/build.py -c R
 
-  echo "4. Creating the distribution"
+  echo "Creating the distribution"
   python ./script/create-dist.py
 
-  echo "5. Uploading the artifacts"
-  buildkite-agent artifact upload "dist/electron-v*-$platform-$arch.zip"
+  # Need to generate the ts definitions only once
+  # so doing it on the Linux platform which packages fastest
+  if [[ "$platform" == "linux" ]]
+  then
+    echo "Generating Typescript definitions"
+    npm run create-typescript-definitions
+    # buildkite-agent artifact upload "out/electron.d.ts"
+  fi
+  echo "Uploading the shasum files"
+  # Going inside the directory to avoid saving the files along with the directory name.
+  # Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
+  # it would always save it as '*.sha256sum
+  cd dist
+  buildkite-agent artifact upload "*.sha256sum"
+  cd ../
 }
 
 main() {

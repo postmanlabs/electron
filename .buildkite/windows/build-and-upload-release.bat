@@ -17,6 +17,14 @@ echo "Creating the distribution"
 CALL python ./script/create-dist.py
 if %errorlevel% neq 0 exit /b %errorlevel%
 
+echo "Uploading the shasum files"
+REM Going inside the directory to avoid saving the files along with the directory name.
+REM Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
+REM it would always save it as '*.sha256sum
+cd dist
+CALL buildkite-agent artifact upload "*.sha256sum"
+cd ..
+
 echo "Post-Cleanup"
 CALL npm run clean
 
