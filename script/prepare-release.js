@@ -11,7 +11,6 @@ const { GitProcess } = require('dugite')
 const GitHub = require('github')
 const pass = '\u2713'.green
 const path = require('path')
-const pkg = require('../package.json')
 const readline = require('readline')
 const versionType = args._[0]
 const versionToBump = args.version
@@ -49,8 +48,12 @@ async function getNewVersion (dryRun) {
     }
     return newVersion
   } catch (err) {
+    let currentVersion = require('../package.json').version
     console.log(`${fail} Could not bump version, error was:`, err)
-    throw err
+    // Only throw when the current version does not match the new version
+    if (versionToBump !== currentVersion) {
+      throw err
+    }
   }
 }
 
@@ -78,67 +81,67 @@ async function getReleaseNotes (currentBranch) {
 
   return 'Release notes were not generated. WIP'
 
-  console.log(`Generating release notes for ${currentBranch}.`)
-  let githubOpts = {
-    owner,
-    repo: targetRepo,
-    base: `v${pkg.version}`,
-    head: currentBranch
-  }
-  let releaseNotes
-  if (args.automaticRelease) {
-    releaseNotes = '## Bug Fixes/Changes \n\n'
-  } else {
-    releaseNotes = '(placeholder)\n'
-  }
-  console.log(`Checking for commits from ${pkg.version} to ${currentBranch}`)
-  let commitComparison = await github.repos.compareCommits(githubOpts)
-    .catch(err => {
-      console.log(`${fail} Error checking for commits from ${pkg.version} to ` +
-        `${currentBranch}`, err)
-      process.exit(1)
-    })
+  // console.log(`Generating release notes for ${currentBranch}.`)
+  // let githubOpts = {
+  //   owner,
+  //   repo: targetRepo,
+  //   base: `v${pkg.version}`,
+  //   head: currentBranch
+  // }
+  // let releaseNotes
+  // if (args.automaticRelease) {
+  //   releaseNotes = '## Bug Fixes/Changes \n\n'
+  // } else {
+  //   releaseNotes = '(placeholder)\n'
+  // }
+  // console.log(`Checking for commits from ${pkg.version} to ${currentBranch}`)
+  // let commitComparison = await github.repos.compareCommits(githubOpts)
+  //   .catch(err => {
+  //     console.log(`${fail} Error checking for commits from ${pkg.version} to ` +
+  //       `${currentBranch}`, err)
+  //     process.exit(1)
+  //   })
 
-  if (commitComparison.data.commits.length === 0) {
-    console.log(`${pass} There are no commits from ${pkg.version} to ` +
-      `${currentBranch}, skipping release.`)
-    process.exit(0)
-  }
+  // if (commitComparison.data.commits.length === 0) {
+  //   console.log(`${pass} There are no commits from ${pkg.version} to ` +
+  //     `${currentBranch}, skipping release.`)
+  //   process.exit(0)
+  // }
 
-  let prCount = 0
-  const mergeRE = /Merge pull request #(\d+) from .*\n/
-  const newlineRE = /(.*)\n*.*/
-  const prRE = /(.* )\(#(\d+)\)(?:.*)/
-  commitComparison.data.commits.forEach(commitEntry => {
-    let commitMessage = commitEntry.commit.message
-    if (commitMessage.indexOf('#') > -1) {
-      let prMatch = commitMessage.match(mergeRE)
-      let prNumber
-      if (prMatch) {
-        commitMessage = commitMessage.replace(mergeRE, '').replace('\n', '')
-        let newlineMatch = commitMessage.match(newlineRE)
-        if (newlineMatch) {
-          commitMessage = newlineMatch[1]
-        }
-        prNumber = prMatch[1]
-      } else {
-        prMatch = commitMessage.match(prRE)
-        if (prMatch) {
-          commitMessage = prMatch[1].trim()
-          prNumber = prMatch[2]
-        }
-      }
-      if (prMatch) {
-        if (commitMessage.substr(commitMessage.length - 1, commitMessage.length) !== '.') {
-          commitMessage += '.'
-        }
-        releaseNotes += `* ${commitMessage} #${prNumber} \n\n`
-        prCount++
-      }
-    }
-  })
-  console.log(`${pass} Done generating release notes for ${currentBranch}. Found ${prCount} PRs.`)
-  return releaseNotes
+  // let prCount = 0
+  // const mergeRE = /Merge pull request #(\d+) from .*\n/
+  // const newlineRE = /(.*)\n*.*/
+  // const prRE = /(.* )\(#(\d+)\)(?:.*)/
+  // commitComparison.data.commits.forEach(commitEntry => {
+  //   let commitMessage = commitEntry.commit.message
+  //   if (commitMessage.indexOf('#') > -1) {
+  //     let prMatch = commitMessage.match(mergeRE)
+  //     let prNumber
+  //     if (prMatch) {
+  //       commitMessage = commitMessage.replace(mergeRE, '').replace('\n', '')
+  //       let newlineMatch = commitMessage.match(newlineRE)
+  //       if (newlineMatch) {
+  //         commitMessage = newlineMatch[1]
+  //       }
+  //       prNumber = prMatch[1]
+  //     } else {
+  //       prMatch = commitMessage.match(prRE)
+  //       if (prMatch) {
+  //         commitMessage = prMatch[1].trim()
+  //         prNumber = prMatch[2]
+  //       }
+  //     }
+  //     if (prMatch) {
+  //       if (commitMessage.substr(commitMessage.length - 1, commitMessage.length) !== '.') {
+  //         commitMessage += '.'
+  //       }
+  //       releaseNotes += `* ${commitMessage} #${prNumber} \n\n`
+  //       prCount++
+  //     }
+  //   }
+  // })
+  // console.log(`${pass} Done generating release notes for ${currentBranch}. Found ${prCount} PRs.`)
+  // return releaseNotes
 }
 
 async function createRelease (branchToTarget, isBeta) {
@@ -196,8 +199,9 @@ async function createRelease (branchToTarget, isBeta) {
 async function pushRelease (branch) {
   let pushDetails = await GitProcess.exec(['push', 'origin', `HEAD:${branch}`, '--follow-tags'], gitDir)
   if (pushDetails.exitCode === 0) {
-    console.log(`${pass} Successfully pushed the release.  Wait for ` +
-      `release builds to finish before running "npm run release".`)
+    console.log(`${pass} Successfully pushed the release. Now, start the build on ` +
+      'the "Electron Release" pipeline on Buildkite\n' +
+      'Pipeline Url: https://buildkite.com/postman/electron-release')
   } else {
     console.log(`${fail} Error pushing the release: ` +
         `${pushDetails.stderr}`)
@@ -213,7 +217,11 @@ async function tagRelease (version) {
   } else {
     console.log(`${fail} Error tagging ${version}: ` +
       `${checkoutDetails.stderr}`)
-    process.exit(1)
+
+    // If the tag already existed, do not crash
+    if (!checkoutDetails.stderr.includes('already exists')) {
+      process.exit(1)
+    }
   }
 }
 
