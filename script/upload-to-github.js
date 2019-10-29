@@ -11,7 +11,6 @@ if (process.argv.length < 6) {
 let filePath = process.argv[2]
 let fileName = process.argv[3]
 let releaseId = process.argv[4]
-let releaseVersion = process.argv[5]
 
 const targetRepo = 'electron'
 
