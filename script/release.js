@@ -230,7 +230,6 @@ async function makeRelease (releaseToValidate) {
     // Fetch latest version of release before verifying
     draftRelease = await getDraftRelease(pkgVersion, true)
     await validateReleaseAssets(draftRelease)
-    await tagLibCC()
     await publishRelease(draftRelease)
     console.log(`${pass} SUCCESS!!! Release has been published. Please run ` +
       `"npm run publish-to-npm" to publish release to npm.`)
@@ -397,25 +396,6 @@ async function validateChecksums (validationArgs) {
     })
   console.log(`${pass} All files from ${validationArgs.fileSource} match ` +
     `shasums defined in ${validationArgs.shaSumFile}.`)
-}
-
-async function tagLibCC () {
-  const tag = `electron-${pkg.version}`
-  const libccDir = path.join(path.resolve(__dirname, '..'), 'vendor', 'libchromiumcontent')
-  console.log(`Tagging release ${tag}.`)
-  let tagDetails = await GitProcess.exec([ 'tag', '-a', '-m', tag, tag ], libccDir)
-  if (tagDetails.exitCode === 0) {
-    let pushDetails = await GitProcess.exec(['push', '--tags'], libccDir)
-    if (pushDetails.exitCode === 0) {
-      console.log(`${pass} Successfully tagged libchromiumcontent with ${tag}.`)
-    } else {
-      console.log(`${fail} Error pushing libchromiumcontent tag ${tag}: ` +
-        `${pushDetails.stderr}`)
-    }
-  } else {
-    console.log(`${fail} Error tagging libchromiumcontent with ${tag}: ` +
-      `${tagDetails.stderr}`)
-  }
 }
 
 makeRelease(args.validateRelease)
