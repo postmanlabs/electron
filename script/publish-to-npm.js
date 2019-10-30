@@ -37,7 +37,7 @@ const jsonFields = [
 let npmTag = 'latest'
 
 new Promise((resolve, reject) => {
-  console.log('cleating temporary directory')
+  console.log('cleaning temporary directory')
   temp.mkdir('electron-npm', (err, dirPath) => {
     if (err) {
       reject(err)
