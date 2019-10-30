@@ -69,7 +69,7 @@ def main():
   if get_target_arch() != 'mips64el':
       upload_electron(release, os.path.join(DIST_DIR, SYMBOLS_NAME), args)
 
-  # Keeping the common files (ts definition, api json, chromedriver & mksnapshot)
+  # Keeping the common files (ts defn, api json, chromedriver & mksnapshot)
   # under linux since it finishes faster
   if PLATFORM == 'linux':
     upload_electron(release, os.path.join(DIST_DIR, 'electron-api.json'), args)
