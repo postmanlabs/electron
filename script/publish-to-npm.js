@@ -125,11 +125,6 @@ new Promise((resolve, reject) => {
   console.log('running npm publish')
   childProcess.execSync(`npm publish ${tarballPath} --tag ${npmTag}`)
 })
-.then(() => {
-  console.log('tagging the release')
-  const localVersion = rootPackageJson.version
-  childProcess.execSync(`npm dist-tag add electron@${localVersion} latest`)
-})
 .catch((err) => {
   console.error(`Error: ${err}`)
   process.exit(1)
