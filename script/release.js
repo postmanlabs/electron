@@ -6,7 +6,6 @@ const args = require('minimist')(process.argv.slice(2))
 const fs = require('fs')
 const { execSync } = require('child_process')
 const GitHub = require('github')
-const { GitProcess } = require('dugite')
 const nugget = require('nugget')
 const pkg = require('../package.json')
 const pkgVersion = `v${pkg.version}`
