@@ -3,15 +3,8 @@ const fs = require('fs')
 const path = require('path')
 const childProcess = require('child_process')
 const GitHubApi = require('github')
-const {GitProcess} = require('dugite')
 const request = require('request')
-const semver = require('semver')
 const rootPackageJson = require('../package.json')
-
-if (!process.env.ELECTRON_NPM_OTP) {
-  console.error('Please set ELECTRON_NPM_OTP')
-  process.exit(1)
-}
 
 const github = new GitHubApi({
   // debug: true,
@@ -41,9 +34,10 @@ const jsonFields = [
   'keywords'
 ]
 
-let npmTag = ''
+let npmTag = 'latest'
 
 new Promise((resolve, reject) => {
+  console.log('cleaning temporary directory')
   temp.mkdir('electron-npm', (err, dirPath) => {
     if (err) {
       reject(err)
@@ -53,8 +47,8 @@ new Promise((resolve, reject) => {
   })
 })
 .then((dirPath) => {
+  console.log('copying files to the temp directory')
   tempDir = dirPath
-  // copy files from `/npm` to temp directory
   files.forEach((name) => {
     const noThirdSegment = name === 'README.md' || name === 'LICENSE'
     fs.writeFileSync(
@@ -72,9 +66,10 @@ new Promise((resolve, reject) => {
     JSON.stringify(packageJson, null, 2)
   )
 
+  console.log('getting the releases from GitHub')
   return github.repos.getReleases({
-    owner: 'electron',
-    repo: rootPackageJson.version.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
+    owner: 'postmanlabs',
+    repo: 'electron'
   })
 })
 .then((releases) => {
@@ -88,6 +83,7 @@ new Promise((resolve, reject) => {
   return release
 })
 .then((release) => {
+  console.log('downloading electron.d.ts from the release from GitHub')
   const tsdAsset = release.assets.find((asset) => asset.name === 'electron.d.ts')
   if (!tsdAsset) {
     throw new Error(`cannot find electron.d.ts from v${rootPackageJson.version} release assets`)
@@ -109,33 +105,14 @@ new Promise((resolve, reject) => {
     })
   })
 })
-.then(async (release) => {
-  const currentBranch = await getCurrentBranch()
-
-  if (release.tag_name.indexOf('nightly') > 0) {
-    if (currentBranch === 'master') {
-      npmTag = 'nightly'
-    } else {
-      npmTag = `nightly-${currentBranch}`
-    }
-  } else {
-    if (currentBranch === 'master') {
-      // This should never happen, master releases should be nightly releases
-      // this is here just-in-case
-      npmTag = 'master'
-    } else if (!release.prerelease) {
-      // Tag the release with a `2-0-x` style tag
-      npmTag = currentBranch
-    } else {
-      // Tag the release with a `beta-3-0-x` style tag
-      npmTag = `beta-${currentBranch}`
-    }
-  }
-})
-.then(() => childProcess.execSync('npm pack', { cwd: tempDir }))
 .then(() => {
-  // test that the package can install electron prebuilt from github release
-  const tarballPath = path.join(tempDir, `${rootPackageJson.name}-${rootPackageJson.version}.tgz`)
+  console.log('running npm pack')
+  childProcess.execSync('npm pack', { cwd: tempDir })
+})
+.then(() => {
+  console.log('testing that the package can install electron prebuilt from github release')
+  const sanitizedPackageName = rootPackageJson.name.replace(/\//g, '-').replace(/@/g, '')
+  const tarballPath = path.join(tempDir, `${sanitizedPackageName}-${rootPackageJson.version}.tgz`)
   return new Promise((resolve, reject) => {
     childProcess.execSync(`npm install ${tarballPath} --force --silent`, {
       env: Object.assign({}, process.env, { electron_config_cache: tempDir }),
@@ -144,39 +121,11 @@ new Promise((resolve, reject) => {
     resolve(tarballPath)
   })
 })
-.then((tarballPath) => childProcess.execSync(`npm publish ${tarballPath} --tag ${npmTag} --otp=${process.env.ELECTRON_NPM_OTP}`))
-.then(() => {
-  const currentTags = JSON.parse(childProcess.execSync('npm show electron dist-tags --json').toString())
-  const localVersion = rootPackageJson.version
-  const parsedLocalVersion = semver.parse(localVersion)
-  if (parsedLocalVersion.prerelease.length === 0 &&
-        semver.gt(localVersion, currentTags.latest)) {
-    childProcess.execSync(`npm dist-tag add electron@${localVersion} latest --otp=${process.env.ELECTRON_NPM_OTP}`)
-  }
-  if (parsedLocalVersion.prerelease[0] === 'beta' &&
-        semver.gt(localVersion, currentTags.beta)) {
-    childProcess.execSync(`npm dist-tag add electron@${localVersion} beta --otp=${process.env.ELECTRON_NPM_OTP}`)
-  }
+.then((tarballPath) => {
+  console.log('running npm publish')
+  childProcess.execSync(`npm publish ${tarballPath} --tag ${npmTag}`)
 })
 .catch((err) => {
   console.error(`Error: ${err}`)
   process.exit(1)
 })
-
-async function getCurrentBranch () {
-  const gitDir = path.resolve(__dirname, '..')
-  console.log(`Determining current git branch`)
-  let gitArgs = ['rev-parse', '--abbrev-ref', 'HEAD']
-  let branchDetails = await GitProcess.exec(gitArgs, gitDir)
-  if (branchDetails.exitCode === 0) {
-    let currentBranch = branchDetails.stdout.trim()
-    console.log(`Successfully determined current git branch is ` +
-      `${currentBranch}`)
-    return currentBranch
-  } else {
-    let error = GitProcess.parseError(branchDetails.stderr)
-    console.log(`Could not get details for the current branch,
-      error was ${branchDetails.stderr}`, error)
-    process.exit(1)
-  }
-}

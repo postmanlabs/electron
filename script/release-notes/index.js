@@ -266,7 +266,7 @@ class Note {
       try {
         const pr = await github.pullRequests.get({
           number: n,
-          owner: 'electron',
+          owner: 'postmanlabs',
           repo: 'electron'
         })
         fs.writeFileSync(cachePath, JSON.stringify({ data: pr.data }))
@@ -293,7 +293,7 @@ class Note {
       } else {
         comments = await github.issues.getComments({
           number: n,
-          owner: 'electron',
+          owner: 'postmanlabs',
           repo: 'electron',
           per_page: 100
         })

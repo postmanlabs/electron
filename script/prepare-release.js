@@ -5,17 +5,17 @@ require('colors')
 const args = require('minimist')(process.argv.slice(2), {
   boolean: ['automaticRelease', 'notesOnly', 'stable']
 })
-const ciReleaseBuild = require('./ci-release-build')
 const { execSync } = require('child_process')
 const fail = '\u2717'.red
 const { GitProcess } = require('dugite')
 const GitHub = require('github')
 const pass = '\u2713'.green
 const path = require('path')
-const pkg = require('../package.json')
 const readline = require('readline')
 const versionType = args._[0]
-const targetRepo = versionType === 'nightly' ? 'nightlies' : 'electron'
+const versionToBump = args.version
+const owner = 'postmanlabs'
+const targetRepo = 'electron'
 
 // TODO (future) automatically determine version based on conventional commits
 // via conventional-recommended-bump
@@ -35,7 +35,7 @@ async function getNewVersion (dryRun) {
     console.log(`Bumping for new "${versionType}" version.`)
   }
   let bumpScript = path.join(__dirname, 'bump-version.py')
-  let scriptArgs = [bumpScript, '--bump', versionType]
+  let scriptArgs = [bumpScript, '--bump', versionToBump || versionType]
   if (dryRun) {
     scriptArgs.push('--dry-run')
   }
@@ -48,8 +48,12 @@ async function getNewVersion (dryRun) {
     }
     return newVersion
   } catch (err) {
+    let currentVersion = require('../package.json').version
     console.log(`${fail} Could not bump version, error was:`, err)
-    throw err
+    // Only throw when the current version does not match the new version
+    if (versionToBump !== currentVersion) {
+      throw err
+    }
   }
 }
 
@@ -74,67 +78,70 @@ async function getReleaseNotes (currentBranch) {
   if (versionType === 'nightly') {
     return 'Nightlies do not get release notes, please compare tags for info'
   }
-  console.log(`Generating release notes for ${currentBranch}.`)
-  let githubOpts = {
-    owner: 'electron',
-    repo: targetRepo,
-    base: `v${pkg.version}`,
-    head: currentBranch
-  }
-  let releaseNotes
-  if (args.automaticRelease) {
-    releaseNotes = '## Bug Fixes/Changes \n\n'
-  } else {
-    releaseNotes = '(placeholder)\n'
-  }
-  console.log(`Checking for commits from ${pkg.version} to ${currentBranch}`)
-  let commitComparison = await github.repos.compareCommits(githubOpts)
-    .catch(err => {
-      console.log(`${fail} Error checking for commits from ${pkg.version} to ` +
-        `${currentBranch}`, err)
-      process.exit(1)
-    })
 
-  if (commitComparison.data.commits.length === 0) {
-    console.log(`${pass} There are no commits from ${pkg.version} to ` +
-      `${currentBranch}, skipping release.`)
-    process.exit(0)
-  }
+  return 'Release notes were not generated. WIP'
 
-  let prCount = 0
-  const mergeRE = /Merge pull request #(\d+) from .*\n/
-  const newlineRE = /(.*)\n*.*/
-  const prRE = /(.* )\(#(\d+)\)(?:.*)/
-  commitComparison.data.commits.forEach(commitEntry => {
-    let commitMessage = commitEntry.commit.message
-    if (commitMessage.indexOf('#') > -1) {
-      let prMatch = commitMessage.match(mergeRE)
-      let prNumber
-      if (prMatch) {
-        commitMessage = commitMessage.replace(mergeRE, '').replace('\n', '')
-        let newlineMatch = commitMessage.match(newlineRE)
-        if (newlineMatch) {
-          commitMessage = newlineMatch[1]
-        }
-        prNumber = prMatch[1]
-      } else {
-        prMatch = commitMessage.match(prRE)
-        if (prMatch) {
-          commitMessage = prMatch[1].trim()
-          prNumber = prMatch[2]
-        }
-      }
-      if (prMatch) {
-        if (commitMessage.substr(commitMessage.length - 1, commitMessage.length) !== '.') {
-          commitMessage += '.'
-        }
-        releaseNotes += `* ${commitMessage} #${prNumber} \n\n`
-        prCount++
-      }
-    }
-  })
-  console.log(`${pass} Done generating release notes for ${currentBranch}. Found ${prCount} PRs.`)
-  return releaseNotes
+  // console.log(`Generating release notes for ${currentBranch}.`)
+  // let githubOpts = {
+  //   owner,
+  //   repo: targetRepo,
+  //   base: `v${pkg.version}`,
+  //   head: currentBranch
+  // }
+  // let releaseNotes
+  // if (args.automaticRelease) {
+  //   releaseNotes = '## Bug Fixes/Changes \n\n'
+  // } else {
+  //   releaseNotes = '(placeholder)\n'
+  // }
+  // console.log(`Checking for commits from ${pkg.version} to ${currentBranch}`)
+  // let commitComparison = await github.repos.compareCommits(githubOpts)
+  //   .catch(err => {
+  //     console.log(`${fail} Error checking for commits from ${pkg.version} to ` +
+  //       `${currentBranch}`, err)
+  //     process.exit(1)
+  //   })
+
+  // if (commitComparison.data.commits.length === 0) {
+  //   console.log(`${pass} There are no commits from ${pkg.version} to ` +
+  //     `${currentBranch}, skipping release.`)
+  //   process.exit(0)
+  // }
+
+  // let prCount = 0
+  // const mergeRE = /Merge pull request #(\d+) from .*\n/
+  // const newlineRE = /(.*)\n*.*/
+  // const prRE = /(.* )\(#(\d+)\)(?:.*)/
+  // commitComparison.data.commits.forEach(commitEntry => {
+  //   let commitMessage = commitEntry.commit.message
+  //   if (commitMessage.indexOf('#') > -1) {
+  //     let prMatch = commitMessage.match(mergeRE)
+  //     let prNumber
+  //     if (prMatch) {
+  //       commitMessage = commitMessage.replace(mergeRE, '').replace('\n', '')
+  //       let newlineMatch = commitMessage.match(newlineRE)
+  //       if (newlineMatch) {
+  //         commitMessage = newlineMatch[1]
+  //       }
+  //       prNumber = prMatch[1]
+  //     } else {
+  //       prMatch = commitMessage.match(prRE)
+  //       if (prMatch) {
+  //         commitMessage = prMatch[1].trim()
+  //         prNumber = prMatch[2]
+  //       }
+  //     }
+  //     if (prMatch) {
+  //       if (commitMessage.substr(commitMessage.length - 1, commitMessage.length) !== '.') {
+  //         commitMessage += '.'
+  //       }
+  //       releaseNotes += `* ${commitMessage} #${prNumber} \n\n`
+  //       prCount++
+  //     }
+  //   }
+  // })
+  // console.log(`${pass} Done generating release notes for ${currentBranch}. Found ${prCount} PRs.`)
+  // return releaseNotes
 }
 
 async function createRelease (branchToTarget, isBeta) {
@@ -143,7 +150,7 @@ async function createRelease (branchToTarget, isBeta) {
   let releaseNotes = !newVersion.includes('beta.1') ? await getReleaseNotes(branchToTarget) : ''
   await tagRelease(newVersion)
   const githubOpts = {
-    owner: 'electron',
+    owner,
     repo: targetRepo
   }
   console.log(`Checking for existing draft release.`)
@@ -179,7 +186,7 @@ async function createRelease (branchToTarget, isBeta) {
     githubOpts.body = releaseNotes
   }
   githubOpts.tag_name = newVersion
-  githubOpts.target_commitish = newVersion.indexOf('nightly') !== -1 ? 'master' : branchToTarget
+  githubOpts.target_commitish = branchToTarget
   const release = await github.repos.createRelease(githubOpts)
     .catch(err => {
       console.log(`${fail} Error creating new release: `, err)
@@ -192,20 +199,14 @@ async function createRelease (branchToTarget, isBeta) {
 async function pushRelease (branch) {
   let pushDetails = await GitProcess.exec(['push', 'origin', `HEAD:${branch}`, '--follow-tags'], gitDir)
   if (pushDetails.exitCode === 0) {
-    console.log(`${pass} Successfully pushed the release.  Wait for ` +
-      `release builds to finish before running "npm run release".`)
+    console.log(`${pass} Successfully pushed the release. Now, start the build on ` +
+      'the "Electron Release" pipeline on Buildkite\n' +
+      'Pipeline Url: https://buildkite.com/postman/electron-release')
   } else {
     console.log(`${fail} Error pushing the release: ` +
         `${pushDetails.stderr}`)
     process.exit(1)
   }
-}
-
-async function runReleaseBuilds (branch) {
-  await ciReleaseBuild(branch, {
-    ghRelease: true,
-    automaticRelease: args.automaticRelease
-  })
 }
 
 async function tagRelease (version) {
@@ -216,7 +217,11 @@ async function tagRelease (version) {
   } else {
     console.log(`${fail} Error tagging ${version}: ` +
       `${checkoutDetails.stderr}`)
-    process.exit(1)
+
+    // If the tag already existed, do not crash
+    if (!checkoutDetails.stderr.includes('already exists')) {
+      process.exit(1)
+    }
   }
 }
 
@@ -271,7 +276,6 @@ async function prepareRelease (isBeta, notesOnly) {
         await verifyNewVersion()
         await createRelease(currentBranch, isBeta)
         await pushRelease(currentBranch)
-        await runReleaseBuilds(currentBranch)
       } else {
         console.log(`There are no new changes to this branch since the last release, aborting release.`)
         process.exit(1)
@@ -280,4 +284,4 @@ async function prepareRelease (isBeta, notesOnly) {
   }
 }
 
-prepareRelease(!args.stable, args.notesOnly)
+prepareRelease(versionType === 'beta', args.notesOnly)

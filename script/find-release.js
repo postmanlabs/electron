@@ -13,7 +13,7 @@ const version = process.argv[2]
 async function findRelease () {
   github.authenticate({type: 'token', token: process.env.ELECTRON_GITHUB_TOKEN})
   let releases = await github.repos.getReleases({
-    owner: 'electron',
+    owner: 'postmanlabs',
     repo: version.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
   })
   let targetRelease = releases.data.find(release => {

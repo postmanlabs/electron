@@ -16,8 +16,6 @@ from lib.config import PLATFORM, get_target_arch,  get_env_var, s3_config, \
 from lib.util import electron_gyp, execute, get_electron_version, \
                      parse_version, scoped_cwd, s3put
 
-
-ELECTRON_REPO = 'electron/electron'
 ELECTRON_VERSION = get_electron_version()
 
 PROJECT_NAME = electron_gyp()['project_name%']
@@ -62,37 +60,36 @@ def main():
 
   # Upload Electron files.
   upload_electron(release, os.path.join(DIST_DIR, DIST_NAME), args)
-  if get_target_arch() != 'mips64el':
-    upload_electron(release, os.path.join(DIST_DIR, SYMBOLS_NAME), args)
-  if PLATFORM == 'darwin':
-    upload_electron(release, os.path.join(DIST_DIR, 'electron-api.json'), args)
-    upload_electron(release, os.path.join(DIST_DIR, 'electron.d.ts'), args)
-    upload_electron(release, os.path.join(DIST_DIR, DSYM_NAME), args)
-  elif PLATFORM == 'win32':
-    upload_electron(release, os.path.join(DIST_DIR, PDB_NAME), args)
 
   # Upload free version of ffmpeg.
   ffmpeg = get_zip_name('ffmpeg', ELECTRON_VERSION)
   upload_electron(release, os.path.join(DIST_DIR, ffmpeg), args)
 
-  chromedriver = get_zip_name('chromedriver', ELECTRON_VERSION)
-  upload_electron(release, os.path.join(DIST_DIR, chromedriver), args)
-  mksnapshot = get_zip_name('mksnapshot', ELECTRON_VERSION)
-  upload_electron(release, os.path.join(DIST_DIR, mksnapshot), args)
+  # Upload symbol files
+  if get_target_arch() != 'mips64el':
+      upload_electron(release, os.path.join(DIST_DIR, SYMBOLS_NAME), args)
+
+  # Keeping the common files (ts defn, api json, chromedriver & mksnapshot)
+  # under linux since it finishes faster
+  if PLATFORM == 'linux':
+    upload_electron(release, os.path.join(DIST_DIR, 'electron-api.json'), args)
+    upload_electron(release, os.path.join(DIST_DIR, 'electron.d.ts'), args)
+
+    chromedriver = get_zip_name('chromedriver', ELECTRON_VERSION)
+    upload_electron(release, os.path.join(DIST_DIR, chromedriver), args)
+    mksnapshot = get_zip_name('mksnapshot', ELECTRON_VERSION)
+    upload_electron(release, os.path.join(DIST_DIR, mksnapshot), args)
+
+  if PLATFORM == 'darwin':
+    upload_electron(release, os.path.join(DIST_DIR, DSYM_NAME), args)
+
+  elif PLATFORM == 'win32':
+    upload_electron(release, os.path.join(DIST_DIR, PDB_NAME), args)
 
   if get_target_arch().startswith('arm'):
     # Upload the x64 binary for arm/arm64 mksnapshot
     mksnapshot = get_zip_name('mksnapshot', ELECTRON_VERSION, 'x64')
     upload_electron(release, os.path.join(DIST_DIR, mksnapshot), args)
-
-  if not tag_exists and not args.upload_to_s3:
-    # Upload symbols to symbol server.
-    run_python_script('upload-symbols.py')
-    if PLATFORM == 'win32':
-      # Upload node headers.
-      run_python_script('create-node-headers.py', '-v', args.version)
-      run_python_script('upload-node-headers.py', '-v', args.version)
-
 
 def parse_args():
   parser = argparse.ArgumentParser(description='upload distribution file')
@@ -180,7 +177,6 @@ def upload_io_to_github(release, filename, filepath, version):
 
 
 def upload_sha256_checksum(version, file_path, key_prefix=None):
-  bucket, access_key, secret_key = s3_config()
   checksum_path = '{}.sha256sum'.format(file_path)
   if key_prefix is None:
     key_prefix = 'atom-shell/tmp/{0}'.format(version)
@@ -191,9 +187,6 @@ def upload_sha256_checksum(version, file_path, key_prefix=None):
   filename = os.path.basename(file_path)
   with open(checksum_path, 'w') as checksum:
     checksum.write('{} *{}'.format(sha256.hexdigest(), filename))
-  s3put(bucket, access_key, secret_key, os.path.dirname(checksum_path),
-        key_prefix, [checksum_path])
-
 
 def auth_token():
   token = get_env_var('GITHUB_TOKEN')
