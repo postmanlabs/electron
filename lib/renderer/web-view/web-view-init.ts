@@ -19,7 +19,7 @@ export function webViewInit (
   contextIsolation: boolean, webviewTag: ElectronInternal.WebViewElement, guestInstanceId: number
 ) {
   // Don't allow recursive `<webview>`.
-  if (webviewTag && guestInstanceId == null) {
+  if (webviewTag) {
     const { webViewImplModule } = require('@electron/internal/renderer/web-view/web-view-impl')
     if (contextIsolation) {
       v8Util.setHiddenValue(window, 'web-view-impl', webViewImplModule)
