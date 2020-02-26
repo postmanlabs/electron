@@ -62,13 +62,14 @@ async function getReleaseNotes (currentBranch, newVersion) {
 }
 
 async function createRelease (branchToTarget, isBeta) {
+  const owner = 'postmanlabs'
   const newVersion = await getNewVersion()
   const releaseNotes = await getReleaseNotes(branchToTarget, newVersion)
   await tagRelease(newVersion)
 
   console.log(`Checking for existing draft release.`)
   const releases = await octokit.repos.listReleases({
-    owner: 'electron',
+    owner,
     repo: targetRepo
   }).catch(err => {
     console.log(`${fail} Could not get releases. Error was: `, err)
@@ -103,7 +104,7 @@ async function createRelease (branchToTarget, isBeta) {
   }
 
   const release = await octokit.repos.createRelease({
-    owner: 'electron',
+    owner,
     repo: targetRepo,
     tag_name: newVersion,
     draft: true,

@@ -30,12 +30,14 @@ const octokit = require('@octokit/rest')({
   auth: process.env.ELECTRON_GITHUB_TOKEN
 })
 
+const owner = 'postmanlabs'
+
 const targetRepo = pkgVersion.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
 let failureCount = 0
 
 async function getDraftRelease (version, skipValidation) {
   const releaseInfo = await octokit.repos.listReleases({
-    owner: 'electron',
+    owner,
     repo: targetRepo
   })
 
@@ -205,7 +207,7 @@ async function createReleaseShasums (release) {
   if (existingAssets.length > 0) {
     console.log(`${fileName} already exists on GitHub; deleting before creating new file.`)
     await octokit.repos.deleteReleaseAsset({
-      owner: 'electron',
+      owner,
       repo: targetRepo,
       asset_id: existingAssets[0].id
     }).catch(err => {
@@ -263,7 +265,7 @@ function saveShaSumFile (checksums, fileName) {
 
 async function publishRelease (release) {
   return octokit.repos.updateRelease({
-    owner: 'electron',
+    owner,
     repo: targetRepo,
     release_id: release.id,
     tag_name: release.tag_name,
@@ -320,7 +322,7 @@ async function verifyAssets (release) {
 
   let filesToCheck = await Promise.all(release.assets.map(async asset => {
     const requestOptions = await octokit.repos.getReleaseAsset.endpoint({
-      owner: 'electron',
+      owner,
       repo: targetRepo,
       asset_id: asset.id,
       headers: {

@@ -6,6 +6,8 @@ const octokit = require('@octokit/rest')({
   auth: process.env.ELECTRON_GITHUB_TOKEN
 })
 
+const owner = 'postmanlabs'
+
 if (process.argv.length < 6) {
   console.log('Usage: upload-to-github filePath fileName releaseId')
   process.exit(1)
@@ -51,7 +53,7 @@ function uploadToGitHub () {
       retry++
 
       octokit.repos.listAssetsForRelease({
-        owner: 'electron',
+        owner,
         repo: targetRepo,
         release_id: releaseId,
         per_page: 100
@@ -63,7 +65,7 @@ function uploadToGitHub () {
         if (existingAssets.length > 0) {
           console.log(`${fileName} already exists; will delete before retrying upload.`)
           octokit.repos.deleteReleaseAsset({
-            owner: 'electron',
+            owner,
             repo: targetRepo,
             asset_id: existingAssets[0].id
           }).catch((deleteErr) => {

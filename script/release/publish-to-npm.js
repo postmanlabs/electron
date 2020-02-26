@@ -18,6 +18,8 @@ if (!process.env.ELECTRON_NPM_OTP) {
 let tempDir
 temp.track() // track and cleanup files at exit
 
+const owner = 'postmanlabs'
+
 const files = [
   'cli.js',
   'index.js',
@@ -69,7 +71,7 @@ new Promise((resolve, reject) => {
     )
 
     return octokit.repos.listReleases({
-      owner: 'electron',
+      owner,
       repo: rootPackageJson.version.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
     })
   })

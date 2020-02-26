@@ -27,6 +27,8 @@ const fixTypes = new Set(['fix'])
 const otherTypes = new Set(['spec', 'build', 'test', 'chore', 'deps', 'refactor', 'tools', 'vendor', 'perf', 'style', 'ci'])
 const knownTypes = new Set([...breakTypes.keys(), ...docTypes.keys(), ...featTypes.keys(), ...fixTypes.keys(), ...otherTypes.keys()])
 
+const owner = 'postmanlabs'
+
 const runGit = async (dir, args) => {
   const response = await GitProcess.exec(args, dir)
   if (response.exitCode !== 0) {
@@ -361,11 +363,11 @@ const getDependencyCommitsGyp = async (pool, fromRef, toRef) => {
   const commits = []
 
   const repos = [{
-    owner: 'electron',
+    owner,
     repo: 'libchromiumcontent',
     dir: path.resolve(ELECTRON_VERSION, 'vendor', 'libchromiumcontent')
   }, {
-    owner: 'electron',
+    owner,
     repo: 'node',
     dir: path.resolve(ELECTRON_VERSION, 'vendor', 'node')
   }]
@@ -401,7 +403,7 @@ const getDepsVariable = async (ref, key) => {
 
 const getDependencyCommitsGN = async (pool, fromRef, toRef) => {
   const repos = [{ // just node
-    owner: 'electron',
+    owner,
     repo: 'node',
     dir: path.resolve(SRC_DIR, 'third_party', 'electron_node'),
     deps_variable_name: 'node_version'
@@ -464,7 +466,7 @@ const getNotes = async (fromRef, toRef, newVersion) => {
   }
 
   // get the electron/electron commits
-  const electron = { owner: 'electron', repo: 'electron', dir: ELECTRON_VERSION }
+  const electron = { owner, repo: 'electron', dir: ELECTRON_VERSION }
   await addRepoToPool(pool, electron, fromRef, toRef)
 
   // Don't include submodules if comparing across major versions;

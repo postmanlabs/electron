@@ -18,6 +18,8 @@ const octokit = require('@octokit/rest')({
 
 const path = require('path')
 
+const owner = 'postmanlabs'
+
 function getLastBumpCommit (tag) {
   const data = execSync(`git log -n1 --grep "Bump ${tag}" --format='format:{"hash": "%H", "message": "%s"}'`).toString()
   return JSON.parse(data)
@@ -40,7 +42,7 @@ async function revertBumpCommit (tag) {
 async function deleteDraft (releaseId, targetRepo) {
   try {
     const result = await octokit.repos.getRelease({
-      owner: 'electron',
+      owner,
       repo: targetRepo,
       release_id: parseInt(releaseId, 10)
     })
@@ -50,7 +52,7 @@ async function deleteDraft (releaseId, targetRepo) {
       return false
     } else {
       await octokit.repos.deleteRelease({
-        owner: 'electron',
+        owner,
         repo: targetRepo,
         release_id: result.data.id
       })
@@ -66,7 +68,7 @@ async function deleteDraft (releaseId, targetRepo) {
 async function deleteTag (tag, targetRepo) {
   try {
     await octokit.git.deleteRef({
-      owner: 'electron',
+      owner,
       repo: targetRepo,
       ref: `tags/${tag}`
     })
