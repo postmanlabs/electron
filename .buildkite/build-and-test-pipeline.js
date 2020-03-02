@@ -25,16 +25,30 @@ function buildStepForNix (platform) {
     label: `:${platform}: :electron: Build`,
     timeout_in_minutes: 60,
     command: [
-      'npm run clean',
-      'python script/bootstrap.py --dev',
-      'python script/build.py -c D', // build in Debug mode
-      `zip -ryq out/D-${platform}.zip out/D`,
-      `buildkite-agent artifact upload "out/D-${platform}.zip"`,
-      'npm run clean-build'
+      'gn gen out/Debug --args="import(\"//electron/build/args/debug.gn\")"',
+      'gn gen out/Debug "--args=import(\"%BUILD_CONFIG_PATH%\")',
+      'gn check out/Debug //electron:electron_lib',
+      'gn check out/Debug //electron:electron_app',
+      'gn check out/Debug //electron:manifests',
+      'gn check out/Debug //electron/shell/common/api:mojo',
+      'ninja -C out/Debug electron:electron_app',
+      'gn gen out/ffmpeg "--args=import(\"//electron/build/args/ffmpeg.gn\")',
+      'ninja -C out/ffmpeg electron:electron_ffmpeg_zip',
+      'ninja -C out/Debug electron:electron_dist_zip',
+      'ninja -C out/Debug electron:electron_mksnapshot_zip',
+      'ninja -C out/Debug electron:electron_chromedriver_zip',
+      'ninja -C out/Debug third_party/electron_node:headers',
+      'buildkite-agent artifact upload src/out/Debug/dist.zip',
+      'buildkite-agent artifact upload src/out/Debug/chromedriver.zip',
+      'buildkite-agent artifact upload src/out/ffmpeg/ffmpeg.zip',
+      '7z a src/out/Debug/node_headers.zip src/out/Debug/gen/node_headers',
+      'buildkite-agent artifact upload src/out/Debug/node_headers.zip',
+      'buildkite-agent artifact upload src/out/Debug/mksnapshot.zip',
+      'buildkite-agent artifact upload src/out/Debug/electron.lib'
     ],
     agents: [
       `os=${platform}`,
-      'queue=electron-build'
+      'queue=electron-build-v7'
     ]
   };
 }
@@ -72,7 +86,7 @@ function generateBuildPipeline () {
   return [
     buildStepForWindows(),
     // buildStepForNix('linux'),
-    // buildStepForNix('darwin'),
+    buildStepForNix('darwin'),
     waitStep(),
     testStepForWindows(),
     // testStepForNix('linux'),
