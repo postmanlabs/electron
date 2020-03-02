@@ -26,7 +26,6 @@ function buildStepForNix (platform) {
     timeout_in_minutes: 60,
     command: [
       'gn gen out/Debug --args="import(\"//electron/build/args/debug.gn\")"',
-      'gn gen out/Debug "--args=import(\"%BUILD_CONFIG_PATH%\")',
       'gn check out/Debug //electron:electron_lib',
       'gn check out/Debug //electron:electron_app',
       'gn check out/Debug //electron:manifests',
