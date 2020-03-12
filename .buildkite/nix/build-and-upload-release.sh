@@ -62,7 +62,7 @@ buildAndUpload() {
   if [[ "$platform" == "linux" ]]
   then
     electron/script/copy-debug-symbols.py --target-cpu="x64" --out-dir=out/Release/debug --compress
-    electron/script/strip-binaries.py --target-cpu="x64"
+    electron/script/strip-binaries.py -d out/Release
     electron/script/add-debug-link.py --target-cpu="x64" --debug-dir=out/Release/debug
   fi
 
@@ -98,10 +98,11 @@ buildAndUpload() {
   buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip
 
   echo "--- mksnapshot build"
-  ninja -C out/Release electron:electron_mksnapshot
+  # ninja -C out/Release electron:electron_mksnapshot
   if [[ "$platform" == "linux" ]]
   then
-    electron/script/strip-binaries.py --file $PWD/out/Release/clang_x64_v8_arm64/mksnapshot
+    electron/script/strip-binaries.py --file $PWD/out/Release/mksnapshot
+    electron/script/strip-binaries.py --file $PWD/out/Release/v8_context_snapshot_generator
   fi
   ninja -C out/Release electron:electron_mksnapshot_zip
   buildkite-agent artifact upload out/Release/mksnapshot.zip
