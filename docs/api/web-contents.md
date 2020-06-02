@@ -1066,10 +1066,12 @@ Returns `Boolean` - Whether audio is currently playing.
 
 #### `contents.setZoomFactor(factor)`
 
-* `factor` Number - Zoom factor.
+* `factor` Double - Zoom factor; default is 1.0.
 
 Changes the zoom factor to the specified factor. Zoom factor is
 zoom percent divided by 100, so 300% = 3.0.
+
+The factor must be greater than 0.0.
 
 **[Deprecated](modernization/property-updates.md)**
 
@@ -1232,6 +1234,25 @@ Returns `Promise<NativeImage>` - Resolves with a [NativeImage](native-image.md)
 
 Captures a snapshot of the page within `rect`. Omitting `rect` will capture the whole visible page.
 
+#### `contents.isBeingCaptured()`
+
+Returns `Boolean` - Whether this page is being captured. It returns true when the capturer count
+is large then 0.
+
+#### `contents.incrementCapturerCount([size])`
+
+* `size` [Size](structures/size.md) (optional) - The perferred size for the capturer.
+
+Increase the capturer count by one. The page is considered visible when its browser window is
+hidden and the capturer count is non-zero.
+
+This also affects the Page Visibility API.
+
+#### `contents.decrementCapturerCount()`
+
+Decrease the capturer count by one. The page will be set to hidden or occluded state when its
+browser window is hidden or occluded and the capturer count reaches zero.
+
 #### `contents.getPrinters()`
 
 Get the system printer list.
@@ -1264,7 +1285,7 @@ Returns [`PrinterInfo[]`](structures/printer-info.md)
     * `vertical` Number (optional) - The vertical dpi.
 * `callback` Function (optional)
   * `success` Boolean - Indicates success of the print call.
-  * `failureReason` String - Called back if the print fails; can be `cancelled` or `failed`.
+  * `failureReason` String - Error description called back if the print fails.
 
 Prints window's web page. When `silent` is set to `true`, Electron will pick
 the system's default printer if `deviceName` is empty and the default settings for printing.

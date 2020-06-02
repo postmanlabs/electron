@@ -185,6 +185,9 @@ class WebContents : public mate::TrackableObject<WebContents>,
   void SetEmbedder(const WebContents* embedder);
   void SetDevToolsWebContents(const WebContents* devtools);
   v8::Local<v8::Value> GetNativeView() const;
+  void IncrementCapturerCount(mate::Arguments* args);
+  void DecrementCapturerCount(mate::Arguments* args);
+  bool IsBeingCaptured();
 
 #if BUILDFLAG(ENABLE_PRINTING)
   void OnGetDefaultPrinter(base::DictionaryValue print_settings,
@@ -278,7 +281,7 @@ class WebContents : public mate::TrackableObject<WebContents>,
   // Methods for zoom handling.
   void SetZoomLevel(double level);
   double GetZoomLevel() const;
-  void SetZoomFactor(double factor);
+  void SetZoomFactor(mate::Arguments* args, double factor);
   double GetZoomFactor() const;
 
   // Callback triggered on permission response.

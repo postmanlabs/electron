@@ -36,14 +36,9 @@ downloadArtifact({
   platform: process.env.npm_config_platform || process.platform,
   arch: process.env.npm_config_arch || process.arch,
   mirrorOptions: {
-    mirror: 'https://github.com/electron/electron/releases/download/'
+    mirror: 'https://github.com/postmanlabs/electron/releases/download/'
   }
-})
-  .then((zipPath) => {
-    console.log('zipPath', zipPath)
-    extractFile(zipPath)
-  })
-  .catch((err) => onerror(err))
+}).then((zipPath) => extractFile(zipPath)).catch((err) => onerror(err))
 
 // unzips and makes path.txt point at the correct executable
 function extractFile (zipPath) {

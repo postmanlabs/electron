@@ -1,6 +1,6 @@
 {
   "name": "@postman/electron",
-  "version": "7.1.13-postman01",
+  "version": "7.2.3-postman001",
   "repository": "https://github.com/electron/electron",
   "description": "Build cross platform desktop apps with JavaScript, HTML, and CSS",
   "devDependencies": {
@@ -58,7 +58,6 @@
     "webpack": "^4.32.2",
     "webpack-cli": "^3.3.2"
   },
-  "private": true,
   "scripts": {
     "asar": "asar",
     "generate-version-json": "node script/generate-version-json.js",

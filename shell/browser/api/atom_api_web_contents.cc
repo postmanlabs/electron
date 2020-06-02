@@ -4,6 +4,7 @@
 
 #include "shell/browser/api/atom_api_web_contents.h"
 
+#include <limits>
 #include <memory>
 #include <set>
 #include <string>
@@ -1679,6 +1680,14 @@ void WebContents::OnGetDefaultPrinter(
     base::string16 default_printer) {
   base::string16 printer_name =
       device_name.empty() ? default_printer : device_name;
+
+  // If there are no valid printers available on the network, we bail.
+  if (printer_name.empty() || !IsDeviceNameValid(printer_name)) {
+    if (print_callback)
+      std::move(print_callback).Run(false, "no valid printers available");
+    return;
+  }
+
   print_settings.SetStringKey(printing::kSettingDeviceName, printer_name);
 
   auto* print_view_manager =
@@ -2196,6 +2205,23 @@ v8::Local<v8::Promise> WebContents::CapturePage(mate::Arguments* args) {
   return handle;
 }
 
+void WebContents::IncrementCapturerCount(mate::Arguments* args) {
+  gfx::Size size;
+
+  // get size arguments if they exist
+  args->GetNext(&size);
+
+  web_contents()->IncrementCapturerCount(size);
+}
+
+void WebContents::DecrementCapturerCount(mate::Arguments* args) {
+  web_contents()->DecrementCapturerCount();
+}
+
+bool WebContents::IsBeingCaptured() {
+  return web_contents()->IsBeingCaptured();
+}
+
 void WebContents::OnCursorChange(const content::WebCursor& cursor) {
   const content::CursorInfo& info = cursor.info();
 
@@ -2296,7 +2322,12 @@ double WebContents::GetZoomLevel() const {
   return zoom_controller_->GetZoomLevel();
 }
 
-void WebContents::SetZoomFactor(double factor) {
+void WebContents::SetZoomFactor(mate::Arguments* args, double factor) {
+  if (factor < std::numeric_limits<double>::epsilon()) {
+    args->ThrowError("'zoomFactor' must be a double greater than 0.0");
+    return;
+  }
+
   auto level = content::ZoomFactorToZoomLevel(factor);
   SetZoomLevel(level);
 }
@@ -2590,6 +2621,9 @@ void WebContents::BuildPrototype(v8::Isolate* isolate,
       .SetMethod("setEmbedder", &WebContents::SetEmbedder)
       .SetMethod("setDevToolsWebContents", &WebContents::SetDevToolsWebContents)
       .SetMethod("getNativeView", &WebContents::GetNativeView)
+      .SetMethod("incrementCapturerCount", &WebContents::IncrementCapturerCount)
+      .SetMethod("decrementCapturerCount", &WebContents::DecrementCapturerCount)
+      .SetMethod("isBeingCaptured", &WebContents::IsBeingCaptured)
       .SetMethod("setWebRTCIPHandlingPolicy",
                  &WebContents::SetWebRTCIPHandlingPolicy)
       .SetMethod("getWebRTCIPHandlingPolicy",
