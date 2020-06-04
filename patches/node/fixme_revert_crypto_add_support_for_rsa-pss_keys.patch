@@ -71,17 +71,17 @@ diff --git a/lib/internal/crypto/sig.js b/lib/internal/crypto/sig.js
 index b6a3376e735094f970ef61a52ef9bb6d6101647a..bb70c2305fd44cfea46a8df5e65d1af5a86d40db 100644
 --- a/lib/internal/crypto/sig.js
 +++ b/lib/internal/crypto/sig.js
-@@ -14,6 +14,10 @@ const {
-   signOneShot: _signOneShot,
+@@ -15,6 +15,10 @@ const {
    verifyOneShot: _verifyOneShot
  } = internalBinding('crypto');
-+const {
+ const {
 +  RSA_PSS_SALTLEN_AUTO,
 +  RSA_PKCS1_PADDING
 +} = internalBinding('constants').crypto;
- const {
++const {
    getDefaultEncoding,
    kHandle,
+   toBuf,
 @@ -54,14 +58,14 @@ Sign.prototype.update = function update(data, encoding) {
  };
  
@@ -855,11 +855,10 @@ index 8c3432e06cb6471b0fa0f042cfb0efdedab603f5..ab86c10ef1ea7e4b582db683b90a375b
    }
  }
  
-@@ -265,43 +251,6 @@ const sec1EncExp = (cipher) => getRegExpForPEM('EC PRIVATE KEY', cipher);
-   }));
+@@ -266,43 +252,6 @@ const sec1EncExp = (cipher) => getRegExpForPEM('EC PRIVATE KEY', cipher);
  }
  
--{
+ {
 -  // Test RSA-PSS.
 -  generateKeyPair('rsa-pss', {
 -    modulusLength: 512,
@@ -896,9 +895,10 @@ index 8c3432e06cb6471b0fa0f042cfb0efdedab603f5..ab86c10ef1ea7e4b582db683b90a375b
 -  }));
 -}
 -
- {
+-{
    const privateKeyEncoding = {
      type: 'pkcs8',
+     format: 'der'
 @@ -606,7 +555,9 @@ const sec1EncExp = (cipher) => getRegExpForPEM('EC PRIVATE KEY', cipher);
    common.expectsError(() => generateKeyPairSync('rsa2', {}), {
      type: TypeError,
