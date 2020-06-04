@@ -66,16 +66,12 @@ buildAndUpload() {
   ninja -C out/Debug electron:electron_dist_zip
   ninja -C out/Debug electron:electron_mksnapshot_zip
   ninja -C out/Debug electron:electron_chromedriver_zip
-  ninja -C out/Debug third_party/electron_node:headers
 
   echo "Uploading artifacts"
   buildkite-agent artifact upload out/Debug/dist.zip
   buildkite-agent artifact upload out/Debug/chromedriver.zip
   buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip
-  zip -ryq out/Debug/node_headers.zip out/Debug/gen/node_headers
-  buildkite-agent artifact upload out/Debug/node_headers.zip
   buildkite-agent artifact upload out/Debug/mksnapshot.zip
-  buildkite-agent artifact upload out/Debug/electron.lib
 
   # # Need to generate the ts definitions only once
   # # so doing it on the Linux platform which packages fastest

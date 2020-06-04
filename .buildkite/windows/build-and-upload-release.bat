@@ -1,35 +1,35 @@
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-echo "Building for %1"
+IF NOT EXIST "src\electron" (
+  ECHO "Not in the correct directory. Exiting..."
+  EXIT /b 1
+)
 
-echo "Running cleanup"
-CALL npm run clean
+ECHO "Cleaning up old files"
+CALL RMDIR /s /q src\out
 
-echo "Running bootstrap command"
-CALL python script\bootstrap.py --target_arch="%1"
-if %errorlevel% neq 0 exit /b %errorlevel%
+ECHO "Change Dir"
+CALL cd src || EXIT /b !errorlevel!
+ECHO "Building electron in Release mode"
+CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\")" || EXIT /b !errorlevel!
+CALL gn check out/Release //electron:electron_lib || EXIT /b !errorlevel!
+CALL gn check out/Release //electron:electron_app || EXIT /b !errorlevel!
+CALL gn check out/Release //electron:manifests || EXIT /b !errorlevel!
+CALL gn check out/Release //electron/shell/common/api:mojo || EXIT /b !errorlevel!
+CALL ninja -C out/Release electron:electron_app || EXIT /b !errorlevel!
+REM if "%GN_CONFIG%"=="testing" ( python C:\Users\electron\depot_tools\post_build_ninja_summary.py -C out\Default )
 
-echo "Building electron in release mode"
-CALL python script\build.py -c R
-if %errorlevel% neq 0 exit /b %errorlevel%
+ECHO "Zipping the artifacts"
+CALL gn gen out/ffmpeg "--args=import(\"//electron/build/args/ffmpeg.gn\")" || EXIT /b !errorlevel!
+CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
+CALL ninja -C out/Release electron:electron_dist_zip || EXIT /b !errorlevel!
+CALL ninja -C out/Release electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
+CALL ninja -C out/Release electron:electron_chromedriver_zip || EXIT /b !errorlevel!
 
-echo "Creating the distribution"
-CALL python ./script/create-dist.py
-if %errorlevel% neq 0 exit /b %errorlevel%
+ECHO "Uploading the artifacts"
+CALL buildkite-agent artifact upload src\out\Release\dist.zip || EXIT /b !errorlevel!
+CALL buildkite-agent artifact upload src\out\Release\chromedriver.zip || EXIT /b !errorlevel!
+CALL buildkite-agent artifact upload src\out\ffmpeg\ffmpeg.zip || EXIT /b !errorlevel!
+CALL buildkite-agent artifact upload src\out\Release\mksnapshot.zip || EXIT /b !errorlevel!
 
-echo "Uploading artifacts to GitHub"
-CALL python ./script/upload.py
-if %errorlevel% neq 0 exit /b %errorlevel%
-
-echo "Uploading the shasum files"
-REM Going inside the directory to avoid saving the files along with the directory name.
-REM Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
-REM it would always save it as '*.sha256sum
-cd dist
-CALL buildkite-agent artifact upload "*.sha256sum"
-cd ..
-
-echo "Post-Cleanup"
-CALL npm run clean
-
-exit /b
+EXIT /b
