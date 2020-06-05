@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ubuntu <ubuntu@ip-172-31-61-0.ec2.internal>
+Date: Fri, 5 Jun 2020 11:52:16 +0000
+Subject: Enabled only X509_V_FLAG_TRUSTED_FIRST flag
+
+
+diff --git a/crypto/x509/x509_vfy.c b/crypto/x509/x509_vfy.c
+index fff97fac993e0b2a4af2f4965f65206fc6556fcb..5fa8c4ed4c6122d49cebc559cb430941bdb9317d 100644
+--- a/crypto/x509/x509_vfy.c
++++ b/crypto/x509/x509_vfy.c
+@@ -270,7 +270,7 @@ int X509_verify_cert(X509_STORE_CTX *ctx)
+         /*
+          * If asked see if we can find issuer in trusted store first
+          */
+-        if (ctx->param->flags & X509_V_FLAG_TRUSTED_FIRST) {
++        if (1) {
+             ok = ctx->get_issuer(&xtmp, ctx, x);
+             if (ok < 0) {
+                 ctx->error = X509_V_ERR_STORE_LOOKUP;
+@@ -407,7 +407,7 @@ int X509_verify_cert(X509_STORE_CTX *ctx)
+          */
+         retry = 0;
+         if (trust != X509_TRUST_TRUSTED
+-            && !(ctx->param->flags & X509_V_FLAG_TRUSTED_FIRST)
++            && !(1)
+             && !(ctx->param->flags & X509_V_FLAG_NO_ALT_CHAINS)) {
+             while (j-- > 1) {
+                 xtmp2 = sk_X509_value(ctx->chain, j - 1);
