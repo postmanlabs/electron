@@ -1,6 +1,6 @@
 {
-  "name": "@postman/electron",
-  "version": "7.2.3-postman001",
+  "name": "electron",
+  "version": "7.2.3-postman002",
   "repository": "https://github.com/electron/electron",
   "description": "Build cross platform desktop apps with JavaScript, HTML, and CSS",
   "devDependencies": {
