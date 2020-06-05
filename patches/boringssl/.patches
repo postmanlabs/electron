@@ -1,3 +1,4 @@
 expose_ripemd160.patch
 expose_aes-cfb.patch
 enabled_x509_v_flag_partial_chain_x509_v_flag_trusted_first_flags.patch
+reverted_enabling_the_x509_v_flag_trusted_first_flag.patch
