@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ubuntu <ubuntu@ip-172-31-61-0.ec2.internal>
+Date: Sat, 6 Jun 2020 06:09:29 +0000
+Subject: Enabled X509_V_FLAG_TRUSTED_FIRST flag
+
+
+diff --git a/crypto/x509/x509_vpm.c b/crypto/x509/x509_vpm.c
+index 84ec838b7c12cb6a3a6901ddc1f1077199823fc7..1efa6af871b3c2c3b9cf03fa8fc3434e80d09c65 100644
+--- a/crypto/x509/x509_vpm.c
++++ b/crypto/x509/x509_vpm.c
+@@ -549,7 +549,7 @@ static const X509_VERIFY_PARAM default_table[] = {
+      (char *)"default",         /* X509 default parameters */
+      0,                         /* Check time */
+      0,                         /* internal flags */
+-     0,                         /* flags */
++     X509_V_FLAG_TRUSTED_FIRST, /* flags */
+      0,                         /* purpose */
+      0,                         /* trust */
+      100,                       /* depth */
