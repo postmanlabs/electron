@@ -67,7 +67,7 @@ function testStepForWindows () {
   return {
     label: ':windows: :electron: Test',
     timeout_in_minutes: 60,
-    command: '.\\.buildkite\\windows\\run-tests',
+    command: '.\\src\\electron\\.buildkite\\windows\\run-tests',
     agents: [
       'os=windows',
       'queue=electron-build-v7'
