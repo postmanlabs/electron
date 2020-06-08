@@ -32,6 +32,7 @@ function buildStepForNix (platform) {
       'pwd',
       'cd src/electron',
       `git fetch && git checkout ${process.env.BUILDKITE_BRANCH}`,
+      'git pull',
       'gclient sync -f',
       'cd ..',
       'gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"',
