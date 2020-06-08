@@ -16,7 +16,7 @@ CALL git fetch || EXIT /b !errorlevel!
 CALL git checkout %BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 
 ECHO "git pull"
-CALL git pull || EXIT /b !errorlevel!
+CALL git pull origin %BUILDKITE_BRANCH%  || EXIT /b !errorlevel!
 
 ECHO "gclient sync -f"
 CALL gclient sync -f || EXIT /b !errorlevel!
