@@ -25,59 +25,59 @@ ECHO "gclient sync -f"
 CALL gclient sync -f || EXIT /b !errorlevel!
 
 
-REM ECHO "Switching to <pipeline>/src directory"
-REM CALL cd /D .. || EXIT /b !errorlevel!
+ECHO "Switching to <pipeline>/src directory"
+CALL cd /D .. || EXIT /b !errorlevel!
 
-REM ECHO "Building electron binaries in Release mode"
-REM if "%ARCH%" == "ia32" (
-REM   CALL gn gen out/Release-x32 --args="import(\"//electron/build/args/release.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
-REM   CALL gn check out/Release-x32 //electron:electron_lib || EXIT /b !errorlevel!
-REM   CALL gn check out/Release-x32 //electron:electron_app || EXIT /b !errorlevel!
-REM   CALL gn check out/Release-x32 //electron:manifests || EXIT /b !errorlevel!
-REM   CALL gn check out/Release-x32 //electron/shell/common/api:mojo || EXIT /b !errorlevel!
-REM   CALL ninja -C out/Release-x32 electron:electron_app || EXIT /b !errorlevel!
-REM   CALL gn gen out/ffmpeg-x32 --args="import(\"//electron/build/args/ffmpeg.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
+ECHO "Building electron binaries in Release mode"
+if "%ARCH%" == "ia32" (
+  CALL gn gen out/Release-x32 --args="import(\"//electron/build/args/release.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
+  CALL gn check out/Release-x32 //electron:electron_lib || EXIT /b !errorlevel!
+  CALL gn check out/Release-x32 //electron:electron_app || EXIT /b !errorlevel!
+  CALL gn check out/Release-x32 //electron:manifests || EXIT /b !errorlevel!
+  CALL gn check out/Release-x32 //electron/shell/common/api:mojo || EXIT /b !errorlevel!
+  CALL ninja -C out/Release-x32 electron:electron_app || EXIT /b !errorlevel!
+  CALL gn gen out/ffmpeg-x32 --args="import(\"//electron/build/args/ffmpeg.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
   
-REM ) ELSE (
-REM   CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\")" || EXIT /b !errorlevel!
-REM   CALL gn check out/Release //electron:electron_lib || EXIT /b !errorlevel!
-REM   CALL gn check out/Release //electron:electron_app || EXIT /b !errorlevel!
-REM   CALL gn check out/Release //electron:manifests || EXIT /b !errorlevel!
-REM   CALL gn check out/Release //electron/shell/common/api:mojo || EXIT /b !errorlevel!
-REM   CALL ninja -C out/Release electron:electron_app || EXIT /b !errorlevel!
-REM   CALL gn gen out/ffmpeg "--args=import(\"//electron/build/args/ffmpeg.gn\")" || EXIT /b !errorlevel!
-REM )
+) ELSE (
+  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\")" || EXIT /b !errorlevel!
+  CALL gn check out/Release //electron:electron_lib || EXIT /b !errorlevel!
+  CALL gn check out/Release //electron:electron_app || EXIT /b !errorlevel!
+  CALL gn check out/Release //electron:manifests || EXIT /b !errorlevel!
+  CALL gn check out/Release //electron/shell/common/api:mojo || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_app || EXIT /b !errorlevel!
+  CALL gn gen out/ffmpeg "--args=import(\"//electron/build/args/ffmpeg.gn\")" || EXIT /b !errorlevel!
+)
 
-REM ECHO "Zipping the artifacts"
-REM if "%ARCH%" == "ia32" (
-REM   CALL ninja -C out/ffmpeg-x32 electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
-REM   CALL ninja -C out/Release-x32 electron:electron_dist_zip || EXIT /b !errorlevel!
-REM   CALL ninja -C out/Release-x32 electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
-REM   CALL ninja -C out/Release-x32 electron:electron_chromedriver_zip || EXIT /b !errorlevel!
-REM ) ELSE (
-REM   CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
-REM   CALL ninja -C out/Release electron:electron_dist_zip || EXIT /b !errorlevel!
-REM   CALL ninja -C out/Release electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
-REM   CALL ninja -C out/Release electron:electron_chromedriver_zip || EXIT /b !errorlevel!
-REM )
+ECHO "Zipping the artifacts"
+if "%ARCH%" == "ia32" (
+  CALL ninja -C out/ffmpeg-x32 electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release-x32 electron:electron_dist_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release-x32 electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release-x32 electron:electron_chromedriver_zip || EXIT /b !errorlevel!
+) ELSE (
+  CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_dist_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_chromedriver_zip || EXIT /b !errorlevel!
+)
 
-REM ECHO "Switch directory <pipeline>/src/out/Release"
-REM CALL cd /D out || EXIT /b !errorlevel!
+ECHO "Switch directory <pipeline>/src/out/Release"
+CALL cd /D out || EXIT /b !errorlevel!
 
-REM ECHO "Uploading the release artifacts"
-REM if "%ARCH%" == "ia32" (
-REM   CALL buildkite-agent artifact upload Release-x32/dist.zip || EXIT /b !errorlevel!
-REM   CALL buildkite-agent artifact upload Release-x32/chromedriver.zip || EXIT /b !errorlevel!
-REM   CALL buildkite-agent artifact upload Release-x32/mksnapshot.zip || EXIT /b !errorlevel!
-REM   CALL buildkite-agent artifact upload ffmpeg-x32/ffmpeg.zip || EXIT /b !errorlevel!
-REM ) ELSE (
-REM   CALL buildkite-agent artifact upload Release/dist.zip || EXIT /b !errorlevel!
-REM   CALL buildkite-agent artifact upload Release/chromedriver.zip || EXIT /b !errorlevel!
-REM   CALL buildkite-agent artifact upload Release/mksnapshot.zip || EXIT /b !errorlevel!
-REM   CALL buildkite-agent artifact upload ffmpeg/ffmpeg.zip || EXIT /b !errorlevel!
-REM )
+ECHO "Uploading the release artifacts"
+if "%ARCH%" == "ia32" (
+  CALL buildkite-agent artifact upload Release-x32/dist.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload Release-x32/chromedriver.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload Release-x32/mksnapshot.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload ffmpeg-x32/ffmpeg.zip || EXIT /b !errorlevel!
+) ELSE (
+  CALL buildkite-agent artifact upload Release/dist.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload Release/chromedriver.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload Release/mksnapshot.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload ffmpeg/ffmpeg.zip || EXIT /b !errorlevel!
+)
 
-REM ECHO "Switch directory <pipeline>/src"
-REM CALL cd /D ../.. || EXIT /b !errorlevel!
+ECHO "Switch directory <pipeline>/src"
+CALL cd /D ../.. || EXIT /b !errorlevel!
 
 EXIT /b
