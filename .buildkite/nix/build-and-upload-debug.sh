@@ -8,7 +8,6 @@ trap cleanup EXIT
 
 # platform should be one of "linux" or "darwin"
 declare platform="$1"
-declare GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
 
 cleanup() {
   echo "running cleanup"
@@ -73,8 +72,8 @@ buildAndUpload() {
   buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip
   buildkite-agent artifact upload out/Debug/mksnapshot.zip
 
-  # # Need to generate the ts definitions only once
-  # # so doing it on the Linux platform which packages fastest
+  # Need to generate the ts definitions only once
+  # so doing it on the Linux platform which packages fastest
   # if [[ "$platform" == "linux" ]]
   # then
   #   echo "Generating Typescript definitions"
@@ -97,7 +96,6 @@ buildAndUpload() {
 main() {
   sanity
   start_xvfb
-
   buildAndUpload "x64"
 }
 
