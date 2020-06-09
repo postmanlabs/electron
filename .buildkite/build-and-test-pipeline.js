@@ -82,7 +82,7 @@ function testStepForNix (platform) {
     command: [`.buildkite/nix/run-tests.sh ${platform}`],
     agents: [
       `os=${platform}`,
-      'queue=electron-build'
+      'queue=electron-build-v7.2'
     ]
   };
 }
