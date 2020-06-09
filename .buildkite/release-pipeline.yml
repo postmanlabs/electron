@@ -15,17 +15,17 @@ steps:
 
   - label: ":linux: :electron: Package"
     command:
-      - "./src/electron/buildkite/nix/build-and-upload-release.sh linux"
+      - "./src/electron/.buildkite/nix/build-and-upload-release.sh linux"
     agents:
       os: "linux"
       queue: "electron-build-v7.2"
 
   - label: ":mac: :electron: Package"
     command:
-      - "./src/electron/buildkite/nix/build-and-upload-release.sh darwin"
+      - "./src/electron/.buildkite/nix/build-and-upload-release.sh darwin"
     agents:
       os: "darwin"
-      queue: "electron-build"
+      queue: "electron-build-v7.2"
   - wait
   - label: ":github: :npm: Release and publish"
     command:
