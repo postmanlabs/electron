@@ -28,32 +28,19 @@ sanity() {
   fi
 }
 
-start_xvfb() {
-  # Start Xvfb only for linux platform
-  if [[ "$platform" != "linux" ]]
-  then
-    return;
-  fi
-
-  echo "Starting Xvfb"
-  export DISPLAY=:99
-
-  # This step might fail since Xvfb might not be running
-  pkill Xvfb || true
-  Xvfb :99 -ac &
-}
-
 buildAndUpload() {
   echo "Building for $platform x64"
-
+  pwd
   echo "--- Swtiching directory <pipeline>/src/electron"
   cd src/electron
+
+  echo "not able to swtich to src/electron"
 
   echo "--- Fetching git branch"
   git fetch && git checkout $BUILDKITE_BRANCH
 
-  echo "--- Take the latest pull"
-  git pull origin $BUILDKITE_BRANCH
+  echo "--- Reset branch to head"
+  git reset --hard origin/$BUILDKITE_BRANCH
 
   echo "--- Running gclient sync step"
   gclient sync -f
@@ -147,7 +134,7 @@ buildAndUpload() {
 
 main() {
   sanity
-  start_xvfb
+
 
   buildAndUpload
 }
