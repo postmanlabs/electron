@@ -14,12 +14,16 @@ CALL RMDIR /s /q src\out
 ECHO "Switching directory to <pipeline>/src/electron"
 CALL cd src/electron || EXIT /b !errorlevel!
 
-ECHO "git fetch && git checkout %BUILDKITE_BRANCH%"
+ECHO "Remove origin and add new origin"
+CALL git remote remove origin || EXIT /b !errorlevel!
+CALL git remote add origin https://github.com/postmanlabs/electron || EXIT /b !errorlevel!
+
+ECHO " set upstream to brancch %BUILDKITE_BRANCH%"
 CALL git fetch || EXIT /b !errorlevel!
-CALL git checkout %BUILDKITE_BRANCH% || EXIT /b !errorlevel!
+CALL git branch --set-upstream-to origin/%BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 
 ECHO "git pull"
-CALL git reset --hard origin/%BUILDKITE_BRANCH%  || EXIT /b !errorlevel!
+CALL git pull || EXIT /b !errorlevel!
 
 ECHO "gclient sync -f"
 CALL gclient sync -f || EXIT /b !errorlevel!

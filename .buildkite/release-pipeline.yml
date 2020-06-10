@@ -1,14 +1,14 @@
 steps:
   - label: ":windows: :electron: Package ia32"
     command:
-      - ".\\src\\electron\\.buildkite\\windows\\build-and-upload-release ia32"
+      - ".\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-upload-release ia32"
     agents:
       os: "windows"
       queue: "electron-build-v7"
 
   - label: ":windows: :electron: Package x64"
     command:
-      - ".\\src\\electron\\.buildkite\\windows\\build-and-upload-release x64"
+      - ".\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-upload-release x64"
     agents:
       os: "windows"
       queue: "electron-build-v7"
@@ -24,7 +24,7 @@ steps:
     command:
       - "./src/electron/.buildkite/nix/build-and-upload-release.sh darwin"
     agents:
-      os: "darwin"
+      os: "mac"
       queue: "electron-build-v7.2"
   - wait
   - label: ":github: :npm: Release and publish"

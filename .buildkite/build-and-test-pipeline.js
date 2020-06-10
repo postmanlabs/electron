@@ -8,7 +8,7 @@ function buildStepForWindows () {
   return {
     label: ':windows: :electron: Build',
     timeout_in_minutes: 60,
-    command: '.\\src\\electron\\.buildkite\\windows\\build-and-upload-release',
+    command: '.\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-upload-release',
     agents: [
       'os=windows',
       'queue=electron-build-v7'
@@ -27,7 +27,7 @@ function buildStepForNix (platform) {
 
   return {
     label: `:${platform}: :electron: Build`,
-    timeout_in_minutes: 60,
+    timeout_in_minutes: 120,
     command: [`.buildkite/nix/build-and-upload-release.sh ${platform}`],
     agents: [
       `os=${platform}`,
@@ -40,7 +40,7 @@ function testStepForWindows () {
   return {
     label: ':windows: :electron: Test',
     timeout_in_minutes: 60,
-    command: '.\\src\\electron\\.buildkite\\windows\\run-tests',
+    command: '.\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\run-tests',
     agents: [
       'os=windows',
       'queue=electron-build-v7'
@@ -67,13 +67,13 @@ function generateBuildPipeline () {
   // }
 
   return [
-    // buildStepForWindows(),
-    buildStepForNix('linux'),
-    // buildStepForNix('darwin'),
+    buildStepForWindows(),
+    // buildStepForNix('linux'),
+    buildStepForNix('darwin'),
     waitStep(),
     // testStepForWindows(),
-    testStepForNix('linux'),
-    // testStepForNix('darwin'),
+    // testStepForNix('linux'),
+    testStepForNix('darwin'),
   ];
 }
 

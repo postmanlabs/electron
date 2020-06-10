@@ -34,14 +34,17 @@ buildAndUpload() {
   echo "--- Swtiching directory <pipeline>/src/electron"
   cd src/electron
 
-  echo "not able to swtich to src/electron"
+  echo "--- Removing and adding origin"
+  git remote remove origin
+  git remote add origin https://github.com/postmanlabs/electron
+  
+  echo "--- Setting upstream branch"
+  git fetch
+  git branch --set-upstream-to origin/$BUILDKITE_BRANCH
 
-  echo "--- Fetching git branch"
-  git fetch && git checkout $BUILDKITE_BRANCH
-
-  echo "--- Reset branch to head"
-  git reset --hard origin/$BUILDKITE_BRANCH
-
+  echo "git pull"
+  git pull
+  
   echo "--- Running gclient sync step"
   gclient sync -f
 
@@ -110,7 +113,6 @@ buildAndUpload() {
     cd ../
   fi
 
-  cd src
   echo "--- Upload artifacts"
   buildkite-agent artifact upload out/Release/dist.zip
   buildkite-agent artifact upload out/Release/chromedriver.zip
