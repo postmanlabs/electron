@@ -20,6 +20,7 @@ CALL git remote add origin https://github.com/postmanlabs/electron || EXIT /b !e
 
 ECHO " set upstream to brancch %BUILDKITE_BRANCH%"
 CALL git fetch || EXIT /b !errorlevel!
+CALL git checkout %BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 CALL git branch --set-upstream-to origin/%BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 
 ECHO "git pull"

@@ -40,6 +40,7 @@ buildAndUpload() {
   
   echo "--- Setting upstream branch"
   git fetch
+  git checkout $BUILDKITE_BRANCH
   git branch --set-upstream-to origin/$BUILDKITE_BRANCH
 
   echo "git pull"
