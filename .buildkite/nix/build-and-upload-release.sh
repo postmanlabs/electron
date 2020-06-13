@@ -115,12 +115,12 @@ buildAndUpload() {
   fi
 
   echo "--- Upload artifacts"
-  buildkite-agent artifact upload out/Release/dist.zip
-  buildkite-agent artifact upload out/Release/chromedriver.zip
-  buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip
-  buildkite-agent artifact upload out/Release/mksnapshot.zip
-  buildkite-agent artifact upload electron/electron-api.json
-  buildkite-agent artifact upload electron/electron.d.ts
+  buildkite-agent artifact upload out/Release/dist.zip "dist/"
+  buildkite-agent artifact upload out/Release/chromedriver.zip "dist/"
+  buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip "dist/"
+  buildkite-agent artifact upload out/Release/mksnapshot.zip "dist/"
+  buildkite-agent artifact upload electron/electron-api.json "dist/"
+  buildkite-agent artifact upload electron/electron.d.ts "dist/"
 
 
   # Upload to GitHub release
