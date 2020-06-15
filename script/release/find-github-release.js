@@ -17,7 +17,6 @@ async function findRelease () {
     owner,
     repo: version.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
   });
-
   const targetRelease = releases.data.find(release => release.tag_name === version);
   let returnObject = {};
 
