@@ -40,15 +40,12 @@ async function getDraftRelease (version, skipValidation) {
     owner,
     repo: targetRepo
   });
-
   const versionToCheck = version || pkgVersion;
-  console.log('versionToCheck', versionToCheck);
   const drafts = releaseInfo.data.filter(release => {
     return release.tag_name === versionToCheck && release.draft === true;
   });
-  console.log('drafts value', drafts);
+
   const draft = drafts[0];
-  console.log('draft inittally', draft);
 
   if (!skipValidation) {
     console.log('skipValidation', skipValidation);
@@ -59,11 +56,8 @@ async function getDraftRelease (version, skipValidation) {
       console.log('draft.prelease', draft.prerelease);
       check(draft.prerelease, 'draft is a prerelease');
     }
-    check(draft.body.length > 50 && !draft.body.includes('(placeholder)'), 'draft has release notes');
-    console.log('failureCount', failureCount);
     check((failureCount === 0), `Draft release looks good to go.`, true);
   }
-  console.log('draft end', draft);
   return draft;
 }
 
@@ -163,6 +157,7 @@ function uploadIndexJson () {
 }
 
 async function createReleaseShasums (release) {
+  console.log('Yes');
   console.log('createReleaseShasums', release);
   const fileName = 'SHASUMS256.txt';
   const existingAssets = release.assets.filter(asset => asset.name === fileName);
@@ -249,9 +244,6 @@ async function makeRelease (releaseToValidate) {
     await validateReleaseAssets(release, true);
   } else {
     let draftRelease = await getDraftRelease();
-    // uploadNodeShasums();
-    // uploadIndexJson();
-
     await createReleaseShasums(draftRelease);
 
     // Fetch latest version of release before verifying

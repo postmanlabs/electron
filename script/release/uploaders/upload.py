@@ -24,16 +24,16 @@ from lib.util import get_electron_branding, execute, get_electron_version, \
 
 
 ELECTRON_REPO = 'postmanlabs/electron'
-
+ELECTRON_VERSION = get_electron_version()
 PROJECT_NAME = get_electron_branding()['project_name']
 PRODUCT_NAME = get_electron_branding()['product_name']
 
 OUT_DIR = get_out_dir()
-DIST_NAME = get_zip_name(PROJECT_NAME, ELECTRON_VERSION)
 
 def main():
 
-  ELECTRON_VERSION = version_from_package_json()
+  POSTMAN_ELECTRON_VERSION = version_from_package_json()
+  DIST_NAME = get_zip_name(PROJECT_NAME, POSTMAN_ELECTRON_VERSION)
 
   args = parse_args()
   if  args.upload_to_s3:
@@ -41,18 +41,19 @@ def main():
     args.upload_timestamp = utcnow.strftime('%Y%m%d')
 
   build_version = get_electron_build_version()
-
-  if not ELECTRON_VERSION.startswith(build_version):
+  print("build_version",build_version)
+  print("POSTMAN_ELECTRON_VERSION",POSTMAN_ELECTRON_VERSION)
+  if not POSTMAN_ELECTRON_VERSION.startswith(build_version):
     error = 'Tag name ({0}) should match build version ({1})\n'.format(
-        ELECTRON_VERSION, build_version)
+        POSTMAN_ELECTRON_VERSION, build_version)
     sys.stderr.write(error)
     sys.stderr.flush()
     return 1
 
   tag_exists = False
-
+  print("args.version",args.version)
   release = get_release(args.version)
-
+  print("release",release)
   if not release['draft']:
     tag_exists = True
 
@@ -76,38 +77,32 @@ def main():
     upload_electron(release, ts_defs_path, args)
 
   # Upload free version of ffmpeg.
-  ffmpeg = get_zip_name('ffmpeg', ELECTRON_VERSION)
+  ffmpeg = get_zip_name('ffmpeg', POSTMAN_ELECTRON_VERSION)
   ffmpeg_zip = os.path.join(OUT_DIR, ffmpeg)
   ffmpeg_build_path = os.path.join(SRC_DIR, 'out', 'ffmpeg', 'ffmpeg.zip')
   shutil.copy2(ffmpeg_build_path, ffmpeg_zip)
   upload_electron(release, ffmpeg_zip, args)
 
-  chromedriver = get_zip_name('chromedriver', ELECTRON_VERSION)
+  chromedriver = get_zip_name('chromedriver', POSTMAN_ELECTRON_VERSION)
   chromedriver_zip = os.path.join(OUT_DIR, chromedriver)
   shutil.copy2(os.path.join(OUT_DIR, 'chromedriver.zip'), chromedriver_zip)
   upload_electron(release, chromedriver_zip, args)
 
-  mksnapshot = get_zip_name('mksnapshot', ELECTRON_VERSION)
+  mksnapshot = get_zip_name('mksnapshot', POSTMAN_ELECTRON_VERSION)
   mksnapshot_zip = os.path.join(OUT_DIR, mksnapshot)
   if get_target_arch().startswith('arm'):
     # Upload the x64 binary for arm/arm64 mksnapshot
-    mksnapshot = get_zip_name('mksnapshot', ELECTRON_VERSION, 'x64')
+    mksnapshot = get_zip_name('mksnapshot', POSTMAN_ELECTRON_VERSION, 'x64')
     mksnapshot_zip = os.path.join(OUT_DIR, mksnapshot)
 
   shutil.copy2(os.path.join(OUT_DIR, 'mksnapshot.zip'), mksnapshot_zip)
   upload_electron(release, mksnapshot_zip, args)
 
-  if not tag_exists and not args.upload_to_s3:
-    # Upload symbols to symbol server.
-    run_python_upload_script('upload-symbols.py')
-    if PLATFORM == 'win32':
-      run_python_upload_script('upload-node-headers.py', '-v', args.version)
-
 
 def parse_args():
   parser = argparse.ArgumentParser(description='upload distribution file')
   parser.add_argument('-v', '--version', help='Specify the version',
-                      default=ELECTRON_VERSION)
+                      default=version_from_package_json())
   parser.add_argument('-o', '--overwrite',
                       help='Overwrite a published release',
                       action='store_true')

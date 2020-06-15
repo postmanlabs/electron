@@ -125,7 +125,7 @@ buildAndUpload() {
 
   echo "Upload to GitHub release"
   cd electron 
-  python script/release/uploaders/upload.py --overwrite
+  python script/release/uploaders/upload.py
   
   echo "Uploading the shasum files"
   # Going inside the directory to avoid saving the files along with the directory name.
