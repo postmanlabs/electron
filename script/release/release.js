@@ -42,20 +42,28 @@ async function getDraftRelease (version, skipValidation) {
   });
 
   const versionToCheck = version || pkgVersion;
+  console.log('versionToCheck', versionToCheck);
   const drafts = releaseInfo.data.filter(release => {
     return release.tag_name === versionToCheck && release.draft === true;
   });
-
+  console.log('drafts value', drafts);
   const draft = drafts[0];
+  console.log('draft inittally', draft);
+
   if (!skipValidation) {
+    console.log('skipValidation', skipValidation);
     failureCount = 0;
     check(drafts.length === 1, 'one draft exists', true);
+
     if (versionToCheck.indexOf('beta') > -1) {
+      console.log('draft.prelease', draft.prerelease);
       check(draft.prerelease, 'draft is a prerelease');
     }
     check(draft.body.length > 50 && !draft.body.includes('(placeholder)'), 'draft has release notes');
+    console.log('failureCount', failureCount);
     check((failureCount === 0), `Draft release looks good to go.`, true);
   }
+  console.log('draft end', draft);
   return draft;
 }
 
@@ -96,59 +104,12 @@ function check (condition, statement, exitIfFail = false) {
 
 function assetsForVersion (version, validatingRelease) {
   const patterns = [
-    `chromedriver-${version}-darwin-x64.zip`,
     `chromedriver-${version}-linux-arm64.zip`,
-    `chromedriver-${version}-linux-armv7l.zip`,
-    `chromedriver-${version}-linux-ia32.zip`,
-    `chromedriver-${version}-linux-x64.zip`,
-    `chromedriver-${version}-mas-x64.zip`,
-    `chromedriver-${version}-win32-ia32.zip`,
-    `chromedriver-${version}-win32-x64.zip`,
-    `chromedriver-${version}-win32-arm64.zip`,
-    `electron-${version}-darwin-x64-dsym.zip`,
-    `electron-${version}-darwin-x64-symbols.zip`,
-    `electron-${version}-darwin-x64.zip`,
-    `electron-${version}-linux-arm64-symbols.zip`,
-    `electron-${version}-linux-arm64.zip`,
-    `electron-${version}-linux-armv7l-symbols.zip`,
-    `electron-${version}-linux-armv7l.zip`,
-    `electron-${version}-linux-ia32-symbols.zip`,
-    `electron-${version}-linux-ia32.zip`,
-    `electron-${version}-linux-x64-debug.zip`,
-    `electron-${version}-linux-x64-symbols.zip`,
     `electron-${version}-linux-x64.zip`,
-    `electron-${version}-mas-x64-dsym.zip`,
-    `electron-${version}-mas-x64-symbols.zip`,
-    `electron-${version}-mas-x64.zip`,
-    `electron-${version}-win32-ia32-pdb.zip`,
-    `electron-${version}-win32-ia32-symbols.zip`,
-    `electron-${version}-win32-ia32.zip`,
-    `electron-${version}-win32-x64-pdb.zip`,
-    `electron-${version}-win32-x64-symbols.zip`,
-    `electron-${version}-win32-x64.zip`,
-    `electron-${version}-win32-arm64-pdb.zip`,
-    `electron-${version}-win32-arm64-symbols.zip`,
-    `electron-${version}-win32-arm64.zip`,
     `electron-api.json`,
     `electron.d.ts`,
-    `ffmpeg-${version}-darwin-x64.zip`,
-    `ffmpeg-${version}-linux-arm64.zip`,
-    `ffmpeg-${version}-linux-armv7l.zip`,
-    `ffmpeg-${version}-linux-ia32.zip`,
     `ffmpeg-${version}-linux-x64.zip`,
-    `ffmpeg-${version}-mas-x64.zip`,
-    `ffmpeg-${version}-win32-ia32.zip`,
-    `ffmpeg-${version}-win32-x64.zip`,
-    `ffmpeg-${version}-win32-arm64.zip`,
-    `mksnapshot-${version}-darwin-x64.zip`,
-    `mksnapshot-${version}-linux-arm64-x64.zip`,
-    `mksnapshot-${version}-linux-armv7l-x64.zip`,
-    `mksnapshot-${version}-linux-ia32.zip`,
-    `mksnapshot-${version}-linux-x64.zip`,
-    `mksnapshot-${version}-mas-x64.zip`,
-    `mksnapshot-${version}-win32-ia32.zip`,
-    `mksnapshot-${version}-win32-x64.zip`,
-    `mksnapshot-${version}-win32-arm64-x64.zip`
+    `mksnapshot-${version}-linux-x64.zip`
   ];
   if (!validatingRelease) {
     patterns.push('SHASUMS256.txt');
@@ -202,6 +163,7 @@ function uploadIndexJson () {
 }
 
 async function createReleaseShasums (release) {
+  console.log('createReleaseShasums', release);
   const fileName = 'SHASUMS256.txt';
   const existingAssets = release.assets.filter(asset => asset.name === fileName);
   if (existingAssets.length > 0) {
@@ -274,6 +236,7 @@ async function publishRelease (release) {
 }
 
 async function makeRelease (releaseToValidate) {
+  console.log('Debug 1', releaseToValidate);
   if (releaseToValidate) {
     if (releaseToValidate === true) {
       releaseToValidate = pkgVersion;
@@ -282,11 +245,12 @@ async function makeRelease (releaseToValidate) {
     }
     console.log(`Validating release ${releaseToValidate}`);
     const release = await getDraftRelease(releaseToValidate);
+    console.log('Debug 2', release);
     await validateReleaseAssets(release, true);
   } else {
     let draftRelease = await getDraftRelease();
-    uploadNodeShasums();
-    uploadIndexJson();
+    // uploadNodeShasums();
+    // uploadIndexJson();
 
     await createReleaseShasums(draftRelease);
 

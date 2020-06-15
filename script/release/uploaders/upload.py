@@ -24,7 +24,6 @@ from lib.util import get_electron_branding, execute, get_electron_version, \
 
 
 ELECTRON_REPO = 'postmanlabs/electron'
-ELECTRON_VERSION = get_electron_version()
 
 PROJECT_NAME = get_electron_branding()['project_name']
 PRODUCT_NAME = get_electron_branding()['product_name']
@@ -33,6 +32,9 @@ OUT_DIR = get_out_dir()
 DIST_NAME = get_zip_name(PROJECT_NAME, ELECTRON_VERSION)
 
 def main():
+
+  ELECTRON_VERSION = version_from_package_json()
+
   args = parse_args()
   if  args.upload_to_s3:
     utcnow = datetime.datetime.utcnow()
@@ -130,10 +132,13 @@ def run_python_upload_script(script, *args):
 def get_electron_build_version():
   if get_target_arch().startswith('arm') or os.environ.has_key('CI'):
     # In CI we just build as told.
-    return ELECTRON_VERSION
-  print("Yoo")
+    SOURCE_ROOT = os.path.abspath(os.path.join(__file__, '..', '..', '..','..'))
+    Json_file = os.path.join(SOURCE_ROOT, 'package.json')
+    with open(Json_file) as f:
+      obj = eval(f.read())
+      return 'v' + obj['version']
+
   electron = get_electron_exec()
-  print("electron exe" , electron)
   return subprocess.check_output([electron, '--version']).strip()
 
 
@@ -195,6 +200,13 @@ def get_release(version):
   release_info = execute(['node', script_path, version])
   release = json.loads(release_info)
   return release
+
+def version_from_package_json():
+  SOURCE_ROOT = os.path.abspath(os.path.join(__file__, '..', '..', '..','..'))
+  Json_file = os.path.join(SOURCE_ROOT, 'package.json')
+  with open(Json_file) as f:
+    obj = eval(f.read())
+    return 'v' + obj['version']
 
 if __name__ == '__main__':
   sys.exit(main())
