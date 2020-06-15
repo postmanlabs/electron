@@ -19,11 +19,6 @@ const fileName = process.argv[3];
 const releaseId = process.argv[4];
 const releaseVersion = process.argv[5];
 
-console.log('filePath', filePath);
-console.log('fileName', fileName);
-console.log('releaseId', releaseId);
-console.log('releaseVersion', releaseVersion);
-
 const getHeaders = (filePath, fileName) => {
   const extension = fileName.split('.').pop();
   const size = fs.statSync(filePath).size;
@@ -45,14 +40,11 @@ const uploadUrl = `https://uploads.github.com/repos/postmanlabs/${targetRepo}/re
 let retry = 0;
 
 function uploadToGitHub () {
-  console.log(getHeaders(filePath, fileName));
   octokit.repos.uploadReleaseAsset({
-    owner,
     url: uploadUrl,
     headers: getHeaders(filePath, fileName),
     file: fs.createReadStream(filePath),
-    name: fileName,
-    label: 'test'
+    name: fileName
   }).then(() => {
     console.log(`Successfully uploaded ${fileName} to GitHub.`);
     process.exit();

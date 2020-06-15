@@ -39,7 +39,6 @@ def main():
     args.upload_timestamp = utcnow.strftime('%Y%m%d')
 
   build_version = get_electron_build_version()
-  print("build_version",build_version)
 
   if not ELECTRON_VERSION.startswith(build_version):
     error = 'Tag name ({0}) should match build version ({1})\n'.format(
@@ -49,17 +48,13 @@ def main():
     return 1
 
   tag_exists = False
-  print("before release args.version", args.version)
 
   release = get_release(args.version)
-  print("release",release)
 
   if not release['draft']:
-    print("not release draft")
     tag_exists = True
 
   if not args.upload_to_s3:
-    print("args",args)
     assert release['exists'], 'Release does not exist; cannot upload to GitHub!'
     assert tag_exists == args.overwrite, \
           'You have to pass --overwrite to overwrite a published release'
@@ -67,7 +62,6 @@ def main():
   # Upload Electron files.
   # Rename dist.zip to  get_zip_name('electron', version, suffix='')
   electron_zip = os.path.join(OUT_DIR, DIST_NAME)
-  print("electron_zip",electron_zip)
 
   shutil.copy2(os.path.join(OUT_DIR, 'dist.zip'), electron_zip)
   upload_electron(release, electron_zip, args)
@@ -81,7 +75,6 @@ def main():
 
   # Upload free version of ffmpeg.
   ffmpeg = get_zip_name('ffmpeg', ELECTRON_VERSION)
-  print("ffmpeg path",ffmpeg)
   ffmpeg_zip = os.path.join(OUT_DIR, ffmpeg)
   ffmpeg_build_path = os.path.join(SRC_DIR, 'out', 'ffmpeg', 'ffmpeg.zip')
   shutil.copy2(ffmpeg_build_path, ffmpeg_zip)
@@ -200,7 +193,6 @@ def get_release(version):
   script_path = os.path.join(
     ELECTRON_DIR, 'script', 'release', 'find-github-release.js')
   release_info = execute(['node', script_path, version])
-  print("release_info",release_info)
   release = json.loads(release_info)
   return release
 

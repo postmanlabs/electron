@@ -30,10 +30,10 @@ const octokit = require('@octokit/rest')({
   auth: process.env.ELECTRON_GITHUB_TOKEN
 });
 
-const owner = 'postmanlabs'
+const owner = 'postmanlabs';
 
-const targetRepo = pkgVersion.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
-let failureCount = 0
+const targetRepo = pkgVersion.indexOf('nightly') > 0 ? 'nightlies' : 'electron';
+let failureCount = 0;
 
 async function getDraftRelease (version, skipValidation) {
   const releaseInfo = await octokit.repos.listReleases({
@@ -214,16 +214,13 @@ async function createReleaseShasums (release) {
       console.log(`${fail} Error deleting ${fileName} on GitHub:`, err);
     });
   }
-  console.log(`Creating and uploading the release ${fileName}.`);
-  const scriptPath = path.join(ELECTRON_DIR, 'script', 'release', 'merge-electron-checksums.py');
-  const checksums = runScript(scriptPath, ['-v', pkgVersion]);
 
+  const scriptPath = path.join(__dirname, 'merge-electron-checksums_local.js');
+  const checksums = runScript(scriptPath, []);
   console.log(`${pass} Generated release SHASUMS.`);
   const filePath = await saveShaSumFile(checksums, fileName);
-
   console.log(`${pass} Created ${fileName} file.`);
-  await uploadShasumFile(filePath, fileName, release.id);
-
+  await uploadShasumFile(filePath, fileName, release);
   console.log(`${pass} Successfully uploaded ${fileName} to GitHub.`);
 }
 
@@ -297,8 +294,8 @@ async function makeRelease (releaseToValidate) {
     draftRelease = await getDraftRelease(pkgVersion, true);
     await validateReleaseAssets(draftRelease);
     await publishRelease(draftRelease);
-    console.log(`${pass} SUCCESS!!! Release has been published. Please run ` +
-      `"npm run publish-to-npm" to publish release to npm.`);
+    // console.log(`${pass} SUCCESS!!! Release has been published. Please run ` +
+    // `"npm run publish-to-npm" to publish release to npm.`);
   }
 }
 

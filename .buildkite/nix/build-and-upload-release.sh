@@ -127,13 +127,24 @@ buildAndUpload() {
   cd electron 
   python script/release/uploaders/upload.py --overwrite
   
-  # echo "Uploading the shasum files"
-  # # Going inside the directory to avoid saving the files along with the directory name.
-  # # Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
-  # # it would always save it as '*.sha256sum
-  # cd dist
-  # buildkite-agent artifact upload "*.sha256sum"
-  # cd ../
+  echo "Uploading the shasum files"
+  # Going inside the directory to avoid saving the files along with the directory name.
+  # Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
+  # it would always save it as '*.sha256sum
+  cd ..
+  cd out/Release
+  buildkite-agent artifact upload "*.sha256sum"
+  cd ..
+  cd ffmpeg
+  buildkite-agent artifact upload "*.sha256sum"
+  cd ../..
+
+  cd electron
+  npm i 
+  mkdir dist || true
+  buildkite-agent artifact download "*.sha256sum" dist/
+  node script/release/release.js --skipVersionCheck
+
 }
 
 main() {
