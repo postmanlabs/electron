@@ -6,7 +6,8 @@ const octokit = require('@octokit/rest')({
   auth: process.env.ELECTRON_GITHUB_TOKEN
 });
 
-const owner = 'postmanlabs'
+const owner = 'postmanlabs';
+const repo = 'electron';
 
 if (process.argv.length < 6) {
   console.log('Usage: upload-to-github filePath fileName releaseId');
@@ -17,6 +18,11 @@ const filePath = process.argv[2];
 const fileName = process.argv[3];
 const releaseId = process.argv[4];
 const releaseVersion = process.argv[5];
+
+console.log('filePath', filePath);
+console.log('fileName', fileName);
+console.log('releaseId', releaseId);
+console.log('releaseVersion', releaseVersion);
 
 const getHeaders = (filePath, fileName) => {
   const extension = fileName.split('.').pop();
@@ -35,15 +41,18 @@ const getHeaders = (filePath, fileName) => {
 };
 
 const targetRepo = releaseVersion.indexOf('nightly') > 0 ? 'nightlies' : 'electron';
-const uploadUrl = `https://uploads.github.com/repos/electron/${targetRepo}/releases/${releaseId}/assets{?name,label}`;
+const uploadUrl = `https://uploads.github.com/repos/postmanlabs/${targetRepo}/releases/${releaseId}/assets{?name,label}`;
 let retry = 0;
 
 function uploadToGitHub () {
+  console.log(getHeaders(filePath, fileName));
   octokit.repos.uploadReleaseAsset({
+    owner,
     url: uploadUrl,
     headers: getHeaders(filePath, fileName),
     file: fs.createReadStream(filePath),
-    name: fileName
+    name: fileName,
+    label: 'test'
   }).then(() => {
     console.log(`Successfully uploaded ${fileName} to GitHub.`);
     process.exit();

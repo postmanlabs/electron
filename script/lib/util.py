@@ -232,7 +232,7 @@ def add_exec_bit(filename):
   os.chmod(filename, os.stat(filename).st_mode | stat.S_IEXEC)
 
 def get_out_dir():
-  out_dir = 'Debug'
+  out_dir = 'Release'
   override = os.environ.get('ELECTRON_OUT_DIR')
   if override is not None:
     out_dir = override
@@ -252,7 +252,9 @@ def get_electron_exec():
     return '{0}/electron.exe'.format(out_dir)
   elif sys.platform == 'linux':
     return '{0}/electron'.format(out_dir)
-
+  elif sys.platform == 'linux2':
+    return '{0}/electron'.format(out_dir)
+    
   raise Exception(
       "get_electron_exec: unexpected platform '{0}'".format(sys.platform))
 

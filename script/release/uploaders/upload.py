@@ -23,20 +23,14 @@ from lib.util import get_electron_branding, execute, get_electron_version, \
                      get_out_dir, SRC_DIR, ELECTRON_DIR
 
 
-ELECTRON_REPO = 'electron/electron'
+ELECTRON_REPO = 'postmanlabs/electron'
 ELECTRON_VERSION = get_electron_version()
 
 PROJECT_NAME = get_electron_branding()['project_name']
 PRODUCT_NAME = get_electron_branding()['product_name']
 
 OUT_DIR = get_out_dir()
-
 DIST_NAME = get_zip_name(PROJECT_NAME, ELECTRON_VERSION)
-SYMBOLS_NAME = get_zip_name(PROJECT_NAME, ELECTRON_VERSION, 'symbols')
-DSYM_NAME = get_zip_name(PROJECT_NAME, ELECTRON_VERSION, 'dsym')
-PDB_NAME = get_zip_name(PROJECT_NAME, ELECTRON_VERSION, 'pdb')
-DEBUG_NAME = get_zip_name(PROJECT_NAME, ELECTRON_VERSION, 'debug')
-
 
 def main():
   args = parse_args()
@@ -45,6 +39,8 @@ def main():
     args.upload_timestamp = utcnow.strftime('%Y%m%d')
 
   build_version = get_electron_build_version()
+  print("build_version",build_version)
+
   if not ELECTRON_VERSION.startswith(build_version):
     error = 'Tag name ({0}) should match build version ({1})\n'.format(
         ELECTRON_VERSION, build_version)
@@ -53,11 +49,16 @@ def main():
     return 1
 
   tag_exists = False
+  print("before release args.version", args.version)
+
   release = get_release(args.version)
+  print("release",release)
   if not release['draft']:
+    print("not release draft")
     tag_exists = True
 
   if not args.upload_to_s3:
+    print("args",args)
     assert release['exists'], 'Release does not exist; cannot upload to GitHub!'
     assert tag_exists == args.overwrite, \
           'You have to pass --overwrite to overwrite a published release'
@@ -65,32 +66,21 @@ def main():
   # Upload Electron files.
   # Rename dist.zip to  get_zip_name('electron', version, suffix='')
   electron_zip = os.path.join(OUT_DIR, DIST_NAME)
+  print("electron_zip",electron_zip)
+
   shutil.copy2(os.path.join(OUT_DIR, 'dist.zip'), electron_zip)
   upload_electron(release, electron_zip, args)
-  if get_target_arch() != 'mips64el':
-    symbols_zip = os.path.join(OUT_DIR, SYMBOLS_NAME)
-    shutil.copy2(os.path.join(OUT_DIR, 'symbols.zip'), symbols_zip)
-    upload_electron(release, symbols_zip, args)
-  if PLATFORM == 'darwin':
+
+  if PLATFORM == 'linux':
     api_path = os.path.join(ELECTRON_DIR, 'electron-api.json')
     upload_electron(release, api_path, args)
 
     ts_defs_path = os.path.join(ELECTRON_DIR, 'electron.d.ts')
     upload_electron(release, ts_defs_path, args)
-    dsym_zip = os.path.join(OUT_DIR, DSYM_NAME)
-    shutil.copy2(os.path.join(OUT_DIR, 'dsym.zip'), dsym_zip)
-    upload_electron(release, dsym_zip, args)
-  elif PLATFORM == 'win32':
-    pdb_zip = os.path.join(OUT_DIR, PDB_NAME)
-    shutil.copy2(os.path.join(OUT_DIR, 'pdb.zip'), pdb_zip)
-    upload_electron(release, pdb_zip, args)
-  elif PLATFORM == 'linux':
-    debug_zip = os.path.join(OUT_DIR, DEBUG_NAME)
-    shutil.copy2(os.path.join(OUT_DIR, 'debug.zip'), debug_zip)
-    upload_electron(release, debug_zip, args)
 
   # Upload free version of ffmpeg.
   ffmpeg = get_zip_name('ffmpeg', ELECTRON_VERSION)
+  print("ffmpeg path",ffmpeg)
   ffmpeg_zip = os.path.join(OUT_DIR, ffmpeg)
   ffmpeg_build_path = os.path.join(SRC_DIR, 'out', 'ffmpeg', 'ffmpeg.zip')
   shutil.copy2(ffmpeg_build_path, ffmpeg_zip)
@@ -147,7 +137,9 @@ def get_electron_build_version():
   if get_target_arch().startswith('arm') or os.environ.has_key('CI'):
     # In CI we just build as told.
     return ELECTRON_VERSION
+  print("Yoo")
   electron = get_electron_exec()
+  print("electron exe" , electron)
   return subprocess.check_output([electron, '--version']).strip()
 
 
@@ -210,6 +202,8 @@ def get_release(version):
   script_path = os.path.join(
     ELECTRON_DIR, 'script', 'release', 'find-github-release.js')
   release_info = execute(['node', script_path, version])
+  print("release_info",release_info)
+
   release = json.loads(release_info)
   return release
 

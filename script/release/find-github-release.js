@@ -33,6 +33,7 @@ async function findRelease () {
       draft: false
     };
   }
+
   console.log(JSON.stringify(returnObject));
 }
 

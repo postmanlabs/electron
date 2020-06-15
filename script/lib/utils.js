@@ -4,7 +4,7 @@ const path = require('path');
 
 const ELECTRON_DIR = path.resolve(__dirname, '..', '..');
 const SRC_DIR = path.resolve(ELECTRON_DIR, '..');
-const OUT_DIR = process.env.ELECTRON_OUT_DIR || 'Debug';
+const OUT_DIR = process.env.ELECTRON_OUT_DIR || 'Release';
 
 require('colors');
 const pass = '\u2713'.green;
