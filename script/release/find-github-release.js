@@ -9,8 +9,8 @@ if (process.argv.length < 3) {
   process.exit(1);
 }
 
-const version = process.argv[2]
-const owner = 'postmanlabs'
+const version = process.argv[2];
+const owner = 'postmanlabs';
 
 async function findRelease () {
   const releases = await octokit.repos.listReleases({

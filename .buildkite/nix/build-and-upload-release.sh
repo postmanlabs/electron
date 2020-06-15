@@ -125,7 +125,6 @@ buildAndUpload() {
 
   echo "Upload to GitHub release"
   cd electron 
-  npm i 
   python script/release/uploaders/upload.py --overwrite
   
   # echo "Uploading the shasum files"

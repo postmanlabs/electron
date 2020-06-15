@@ -53,6 +53,7 @@ def main():
 
   release = get_release(args.version)
   print("release",release)
+
   if not release['draft']:
     print("not release draft")
     tag_exists = True
@@ -203,7 +204,6 @@ def get_release(version):
     ELECTRON_DIR, 'script', 'release', 'find-github-release.js')
   release_info = execute(['node', script_path, version])
   print("release_info",release_info)
-
   release = json.loads(release_info)
   return release
 
