@@ -46,111 +46,110 @@ buildAndUpload() {
   echo "git pull"
   git pull
   
-  # echo "--- Running gclient sync step"
-  # gclient sync -f
+  echo "--- Running gclient sync step"
+  gclient sync -f
 
   echo "--- Swtiching directory <pipeline>/src"
   cd ..
   
-  # export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
+  export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
 
-  # echo "--- Running cleanup old files"
-  # rm -rf out
+  echo "--- Running cleanup old files"
+  rm -rf out
 
-  # echo "--- Running gn checks"
-  # gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
-  # gn check out/Release //electron:electron_lib
-  # gn check out/Release //electron:electron_app
-  # gn check out/Release //electron:manifests
-  # gn check out/Release //electron/shell/common/api:mojo
+  echo "--- Running gn checks"
+  gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
+  gn check out/Release //electron:electron_lib
+  gn check out/Release //electron:electron_app
+  gn check out/Release //electron:manifests
+  gn check out/Release //electron/shell/common/api:mojo
 
-  # echo "--- Electron build"
-  # ninja -C out/Release electron
+  echo "--- Electron build"
+  ninja -C out/Release electron
 
-  # echo "--- Strip Electron binaries (Linux)"
-  # if [[ "$platform" == "linux" ]]
-  # then
-  #   electron/script/copy-debug-symbols.py --target-cpu="x64" --out-dir=out/Release/debug --compress
-  #   electron/script/strip-binaries.py -d out/Release
-  #   electron/script/add-debug-link.py --target-cpu="x64" --debug-dir=out/Release/debug
-  # fi
+  echo "--- Strip Electron binaries (Linux)"
+  if [[ "$platform" == "linux" ]]
+  then
+    electron/script/copy-debug-symbols.py --target-cpu="x64" --out-dir=out/Release/debug --compress
+    electron/script/strip-binaries.py -d out/Release
+    electron/script/add-debug-link.py --target-cpu="x64" --debug-dir=out/Release/debug
+  fi
 
-  # echo "--- Build Electron distributed binary"
-  # ninja -C out/Release electron:electron_dist_zip
+  echo "--- Build Electron distributed binary"
+  ninja -C out/Release electron:electron_dist_zip
 
-  # if [[ "$platform" == "linux" ]]
-  # then
-  #   target_os=linux
-  # else
-  #   target_os=mac
-  # fi
+  if [[ "$platform" == "linux" ]]
+  then
+    target_os=linux
+  else
+    target_os=mac
+  fi
 
-  # echo "--- Build chromedriver"
-  # ninja -C out/Release chrome/test/chromedriver
-  # [[ "$platform" == "linux" ]] && electron/script/strip-binaries.py --target-cpu="x64" --file $PWD/out/Release/chromedriver
-  # ninja -C out/Release electron:electron_chromedriver_zip
+  echo "--- Build chromedriver"
+  ninja -C out/Release chrome/test/chromedriver
+  [[ "$platform" == "linux" ]] && electron/script/strip-binaries.py --target-cpu="x64" --file $PWD/out/Release/chromedriver
+  ninja -C out/Release electron:electron_chromedriver_zip
 
-  # echo "--- Build ffmpeg"
-  # gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\")"
-  # ninja -C out/ffmpeg electron:electron_ffmpeg_zip
+  echo "--- Build ffmpeg"
+  gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\")"
+  ninja -C out/ffmpeg electron:electron_ffmpeg_zip
   
 
-  # echo "--- Build mksnapshot"
-  # ninja -C out/Release electron:electron_mksnapshot
+  echo "--- Build mksnapshot"
+  ninja -C out/Release electron:electron_mksnapshot
 
-  # if [[ "$platform" == "linux" ]]
-  # then
-  #   electron/script/strip-binaries.py --file $PWD/out/Release/mksnapshot
-  #   electron/script/strip-binaries.py --file $PWD/out/Release/v8_context_snapshot_generator
-  # fi
-  # ninja -C out/Release electron:electron_mksnapshot_zip
+  if [[ "$platform" == "linux" ]]
+  then
+    electron/script/strip-binaries.py --file $PWD/out/Release/mksnapshot
+    electron/script/strip-binaries.py --file $PWD/out/Release/v8_context_snapshot_generator
+  fi
+  ninja -C out/Release electron:electron_mksnapshot_zip
   
 
-  # echo "--- Generate type declarationsp (Linux)"
-  # if [[ "$platform" == "linux" ]]
-  # then
-  #   cd electron
-  #   node script/yarn create-typescript-definitions
-  #   cd ../
-  # fi
+  echo "--- Generate type declarationsp (Linux)"
+  if [[ "$platform" == "linux" ]]
+  then
+    cd electron
+    node script/yarn create-typescript-definitions
+    cd ../
+  fi
 
-  # echo "--- Upload artifacts"
-  # buildkite-agent artifact upload out/Release/dist.zip "dist/"
-  # buildkite-agent artifact upload out/Release/chromedriver.zip "dist/"
-  # buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip "dist/"
-  # buildkite-agent artifact upload out/Release/mksnapshot.zip "dist/"
-  # buildkite-agent artifact upload electron/electron-api.json "dist/"
-  # buildkite-agent artifact upload electron/electron.d.ts "dist/"
+  echo "--- Upload artifacts"
+  buildkite-agent artifact upload out/Release/dist.zip "dist/"
+  buildkite-agent artifact upload out/Release/chromedriver.zip "dist/"
+  buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip "dist/"
+  buildkite-agent artifact upload out/Release/mksnapshot.zip "dist/"
+  buildkite-agent artifact upload electron/electron-api.json "dist/"
+  buildkite-agent artifact upload electron/electron.d.ts "dist/"
 
 
-  echo "Upload to GitHub release"
-  cd electron 
-  python script/release/uploaders/upload.py
-  
-  echo "Uploading the shasum files"
-  # Going inside the directory to avoid saving the files along with the directory name.
-  # Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
-  # it would always save it as '*.sha256sum
-  cd ..
-  cd out/Release
-  buildkite-agent artifact upload "*.sha256sum"
-  cd ..
-  cd ffmpeg
-  buildkite-agent artifact upload "*.sha256sum"
-  cd ../..
-
-  cd electron
-  npm i 
-  mkdir dist || true
-  buildkite-agent artifact download "*.sha256sum" dist/
-  node script/release/release.js --skipVersionCheck
-
+  if [[ "$BUILDKITE_PIPELINE_NAME" != "Electron Build and Test" ]]
+  then
+    echo "Upload to GitHub release"
+    cd electron 
+    python script/release/uploaders/upload.py
+    
+    echo "Uploading the shasum files"
+    # Going inside the directory to avoid saving the files along with the directory name.
+    # Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
+    # it would always save it as '*.sha256sum
+    cd ..
+    cd out/Release
+    buildkite-agent artifact upload "*.sha256sum"
+    cd ..
+    cd ffmpeg
+    buildkite-agent artifact upload "*.sha256sum"
+    cd ../..
+    # cd electron
+    # npm i 
+    # mkdir dist || true
+    # buildkite-agent artifact download "*.sha256sum" dist/
+    # node script/release/release.js --skipVersionCheck
+  fi
 }
 
 main() {
   sanity
-
-
   buildAndUpload
 }
 

@@ -82,7 +82,18 @@ if "%ARCH%" == "ia32" (
   CALL buildkite-agent artifact upload ffmpeg/ffmpeg.zip || EXIT /b !errorlevel!
 )
 
-ECHO "Switch directory <pipeline>/src"
-CALL cd /D ../.. || EXIT /b !errorlevel!
+if "%BUILDKITE_PIPELINE_NAME%" != "Electron Build and Test" (
+  ECHO "Upload to GitHub release"
+  CALL cd electron 
+  CALL python script/release/uploaders/upload.py
+    
+  ECHO "Uploading the shasum files"
+  CALL cd ..
+  CALL cd out/Release
+  CALL buildkite-agent artifact upload "*.sha256sum"
+  CALL cd ..
+  CALL cd ffmpeg
+  CALL buildkite-agent artifact upload "*.sha256sum"
+)
 
 EXIT /b
