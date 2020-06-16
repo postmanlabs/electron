@@ -24,7 +24,7 @@ steps:
     command:
       - "./src/electron/.buildkite/nix/build-and-upload-release.sh darwin"
     agents:
-      os: "mac"
+      os: "darwin"
       queue: "electron-build-v7.2"
   # - wait
   # - label: ":github: :npm: Release and publish"
