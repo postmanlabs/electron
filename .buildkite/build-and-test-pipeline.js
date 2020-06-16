@@ -69,11 +69,11 @@ function generateBuildPipeline () {
   return [
     buildStepForWindows(),
     buildStepForNix('linux'),
-    // buildStepForNix('darwin'),
+    buildStepForNix('darwin'),
     waitStep(),
     testStepForWindows(),
     testStepForNix('linux'),
-    // testStepForNix('darwin'),
+    testStepForNix('darwin'),
   ];
 }
 
