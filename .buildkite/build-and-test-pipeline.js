@@ -28,7 +28,7 @@ function buildStepForNix (platform) {
   return {
     label: `:${platform}: :electron: Build`,
     timeout_in_minutes: 120,
-    command: [`.buildkite/nix/build-and-upload-release.sh ${platform}`],
+    command: [`.buildkite/nix/build-and-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
       'queue=electron-build-v7.2'
@@ -70,10 +70,10 @@ function generateBuildPipeline () {
     buildStepForWindows(),
     buildStepForNix('linux'),
     buildStepForNix('darwin'),
-    waitStep(),
-    testStepForWindows(),
-    testStepForNix('linux'),
-    testStepForNix('darwin'),
+    // waitStep(),
+    // testStepForWindows(),
+    // testStepForNix('linux'),
+    // testStepForNix('darwin'),
   ];
 }
 

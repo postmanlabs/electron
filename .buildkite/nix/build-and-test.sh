@@ -121,31 +121,6 @@ buildAndUpload() {
   buildkite-agent artifact upload out/Release/mksnapshot.zip 
   buildkite-agent artifact upload electron/electron-api.json 
   buildkite-agent artifact upload electron/electron.d.ts
-
-
-  if [[ "$BUILDKITE_PIPELINE_NAME" != "Electron Build and Test" ]]
-  then
-    echo "Upload to GitHub release"
-    cd electron 
-    python script/release/uploaders/upload.py
-    
-    echo "Uploading the shasum files"
-    # Going inside the directory to avoid saving the files along with the directory name.
-    # Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
-    # it would always save it as '*.sha256sum
-    cd ..
-    cd out/Release
-    buildkite-agent artifact upload "*.sha256sum"
-    cd ..
-    cd ffmpeg
-    buildkite-agent artifact upload "*.sha256sum"
-    cd ../..
-    # cd electron
-    # npm i 
-    # mkdir dist || true
-    # buildkite-agent artifact download "*.sha256sum" dist/
-    # node script/release/release.js --skipVersionCheck
-  fi
 }
 
 main() {
