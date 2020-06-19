@@ -8,7 +8,7 @@ function buildStepForWindows () {
   return {
     label: ':windows: :electron: Build',
     timeout_in_minutes: 60,
-    command: '.\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-upload-release',
+    command: '.\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-test',
     agents: [
       'os=windows',
       'queue=electron-build-v7'

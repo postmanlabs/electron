@@ -55,10 +55,10 @@ if "%ARCH%" == "ia32" (
 
 ECHO "Zipping the artifacts"
 if "%ARCH%" == "ia32" (
-  CALL ninja -C out/ffmpeg-x32 electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release-x32 electron:electron_dist_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release-x32 electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release-x32 electron:electron_chromedriver_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_dist_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_chromedriver_zip || EXIT /b !errorlevel!
 ) ELSE (
   CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
   CALL ninja -C out/Release electron:electron_dist_zip || EXIT /b !errorlevel!
@@ -71,10 +71,10 @@ CALL cd /D out || EXIT /b !errorlevel!
 
 ECHO "Uploading the release artifacts"
 if "%ARCH%" == "ia32" (
-  CALL buildkite-agent artifact upload Release-x32/dist.zip || EXIT /b !errorlevel!
-  CALL buildkite-agent artifact upload Release-x32/chromedriver.zip || EXIT /b !errorlevel!
-  CALL buildkite-agent artifact upload Release-x32/mksnapshot.zip || EXIT /b !errorlevel!
-  CALL buildkite-agent artifact upload ffmpeg-x32/ffmpeg.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload Release/dist.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload Release/chromedriver.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload Release/mksnapshot.zip || EXIT /b !errorlevel!
+  CALL buildkite-agent artifact upload ffmpeg/ffmpeg.zip || EXIT /b !errorlevel!
 ) ELSE (
   CALL buildkite-agent artifact upload Release/dist.zip || EXIT /b !errorlevel!
   CALL buildkite-agent artifact upload Release/chromedriver.zip || EXIT /b !errorlevel!
@@ -82,18 +82,16 @@ if "%ARCH%" == "ia32" (
   CALL buildkite-agent artifact upload ffmpeg/ffmpeg.zip || EXIT /b !errorlevel!
 )
 
-if "%BUILDKITE_PIPELINE_NAME%" != "Electron Build and Test" (
-  ECHO "Upload to GitHub release"
-  CALL cd electron 
-  CALL python script/release/uploaders/upload.py
-    
-  ECHO "Uploading the shasum files"
-  CALL cd ..
-  CALL cd out/Release
-  CALL buildkite-agent artifact upload "*.sha256sum"
-  CALL cd ..
-  CALL cd ffmpeg
-  CALL buildkite-agent artifact upload "*.sha256sum"
-)
+ECHO "Upload to GitHub release"
+CALL cd electron 
+CALL python script/release/uploaders/upload.py
+  
+ECHO "Uploading the shasum files"
+CALL cd ..
+CALL cd out/Release
+CALL buildkite-agent artifact upload "*.sha256sum"
+CALL cd ..
+CALL cd ffmpeg
+CALL buildkite-agent artifact upload "*.sha256sum"
 
 EXIT /b
