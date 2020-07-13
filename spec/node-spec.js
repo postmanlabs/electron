@@ -9,6 +9,7 @@ const { ipcRenderer, remote } = require('electron');
 const features = process.electronBinding('features');
 
 const { emittedOnce } = require('./events-helpers');
+const { ifit } = require('./spec-helpers');
 
 const isCI = remote.getGlobal('isCi');
 chai.use(dirtyChai);
@@ -689,5 +690,18 @@ describe('node feature', () => {
   it('can find a module using a package.json main field', () => {
     const result = ChildProcess.spawnSync(remote.process.execPath, [path.resolve(fixtures, 'api', 'electron-main-module', 'app.asar')]);
     expect(result.status).to.equal(0);
+  });
+
+  ifit(features.isRunAsNodeEnabled())('handles Promise timeouts correctly', (done) => {
+    const scriptPath = path.join(fixtures, 'module', 'node-promise-timer.js');
+    const child = ChildProcess.spawn(process.execPath, [scriptPath], {
+      env: { ELECTRON_RUN_AS_NODE: 'true' }
+    });
+    emittedOnce(child, 'exit').then(([code, signal]) => {
+      expect(code).to.equal(0);
+      expect(signal).to.equal(null);
+      child.kill();
+      done();
+    });
   });
 });

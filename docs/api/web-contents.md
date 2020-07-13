@@ -138,7 +138,7 @@ Emitted when page receives favicon urls.
 
 Returns:
 
-* `event` Event
+* `event` NewWindowEvent
 * `url` String
 * `frameName` String
 * `disposition` String - Can be `default`, `foreground-tab`, `background-tab`,
@@ -1783,7 +1783,7 @@ A [`WebContents`](web-contents.md) instance that might own this `WebContents`.
 
 #### `contents.devToolsWebContents` _Readonly_
 
-A `WebContents` of DevTools for this `WebContents`.
+A `WebContents | null` property that represents the of DevTools `WebContents` associated with a given `WebContents`.
 
 **Note:** Users should never store this object because it may become `null`
 when the DevTools has been closed.

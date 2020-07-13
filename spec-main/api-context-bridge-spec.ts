@@ -1,6 +1,8 @@
 import { contextBridge, BrowserWindow, ipcMain } from 'electron'
 import { expect } from 'chai'
 import * as fs from 'fs-extra'
+import * as http from 'http'
+import { AddressInfo } from 'net'
 import * as os from 'os'
 import * as path from 'path'
 
@@ -12,6 +14,20 @@ const fixturesPath = path.resolve(__dirname, 'fixtures', 'api', 'context-bridge'
 describe('contextBridge', () => {
   let w: BrowserWindow
   let dir: string
+  let server: http.Server
+
+  before(async () => {
+    server = http.createServer((req, res) => {
+      res.setHeader('Content-Type', 'text/html')
+      res.end('')
+    })
+    await new Promise(resolve => server.listen(0, resolve))
+  })
+
+  after(async () => {
+    if (server) await new Promise(resolve => server.close(resolve))
+    server = null as any
+  })
 
   afterEach(async () => {
     await closeWindow(w)
@@ -64,7 +80,7 @@ describe('contextBridge', () => {
             preload: path.resolve(tmpDir, 'preload.js')
           }
         })
-        await w.loadFile(path.resolve(fixturesPath, 'empty.html'))
+        await w.loadURL(`http://127.0.0.1:${(server.address() as AddressInfo).port}`)
       }
     
       const callWithBindings = async (fn: Function) => {
@@ -362,19 +378,23 @@ describe('contextBridge', () => {
             require('electron').ipcRenderer.on('get-gc-info', e => e.sender.send('gc-info', (contextBridge as any).debugGC()))
             contextBridge.exposeInMainWorld('example', {
               getFunction: () => () => 123
-            })
-          })
-          expect((await getGCInfo()).functionCount).to.equal(2)
+            });
+          });
           await callWithBindings(async (root: any) => {
-            root.x = [root.example.getFunction()]
-          })
-          expect((await getGCInfo()).functionCount).to.equal(3)
+            root.GCRunner.run();
+          });
+          const baseValue = (await getGCInfo()).functionCount;
           await callWithBindings(async (root: any) => {
             root.x = []
-            root.GCRunner.run()
-          })
-          expect((await getGCInfo()).functionCount).to.equal(2)
-        })
+            root.x = [root.example.getFunction()];
+          });
+          expect((await getGCInfo()).functionCount).to.equal(baseValue + 1);
+          await callWithBindings(async (root: any) => {
+            root.x = [];
+            root.GCRunner.run();
+          });
+          expect((await getGCInfo()).functionCount).to.equal(baseValue);
+        });
 
         it('should release the global hold on objects sent across contexts when the object proxy is de-reffed', async () => {
           await makeBindingWindow(() => {
@@ -392,9 +412,9 @@ describe('contextBridge', () => {
           })
           // Initial Setup
           let info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(3)
-          expect(info.liveProxyValues).to.equal(3)
-          expect(info.objectCount).to.equal(6)
+          const baseFrom = info.liveFromValues;
+          const baseProxy = info.liveProxyValues;
+          const baseCount = info.objectCount;
 
           // Create Reference
           await callWithBindings(async (root: any) => {
@@ -403,9 +423,9 @@ describe('contextBridge', () => {
             root.GCRunner.run()
           })
           info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(4)
-          expect(info.liveProxyValues).to.equal(4)
-          expect(info.objectCount).to.equal(8)
+          expect(info.liveFromValues).to.equal(baseFrom + 1)
+          expect(info.liveProxyValues).to.equal(baseProxy + 1)
+          expect(info.objectCount).to.equal(baseCount + 2)
 
           // Release Reference
           await callWithBindings(async (root: any) => {
@@ -413,9 +433,9 @@ describe('contextBridge', () => {
             root.GCRunner.run()
           })
           info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(3)
-          expect(info.liveProxyValues).to.equal(3)
-          expect(info.objectCount).to.equal(6)
+          expect(info.liveFromValues).to.equal(baseFrom)
+          expect(info.liveProxyValues).to.equal(baseProxy)
+          expect(info.objectCount).to.equal(baseCount)
         })
 
         it('should release the global hold on objects sent across contexts when the object source is de-reffed', async () => {
@@ -434,9 +454,9 @@ describe('contextBridge', () => {
           })
           // Initial Setup
           let info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(3)
-          expect(info.liveProxyValues).to.equal(3)
-          expect(info.objectCount).to.equal(6)
+          const baseFrom = info.liveFromValues;
+          const baseProxy = info.liveProxyValues;
+          const baseCount = info.objectCount;
 
           // Create Reference
           await callWithBindings(async (root: any) => {
@@ -445,9 +465,9 @@ describe('contextBridge', () => {
             root.GCRunner.run()
           })
           info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(4)
-          expect(info.liveProxyValues).to.equal(4)
-          expect(info.objectCount).to.equal(8)
+          expect(info.liveFromValues).to.equal(baseFrom + 1)
+          expect(info.liveProxyValues).to.equal(baseProxy + 1)
+          expect(info.objectCount).to.equal(baseCount + 2)
 
           // Release Reference
           await callWithBindings(async (root: any) => {
@@ -455,9 +475,9 @@ describe('contextBridge', () => {
             root.GCRunner.run()
           })
           info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(3)
-          expect(info.liveProxyValues).to.equal(3)
-          expect(info.objectCount).to.equal(6)
+          expect(info.liveFromValues).to.equal(baseFrom)
+          expect(info.liveProxyValues).to.equal(baseProxy)
+          expect(info.objectCount).to.equal(baseCount)
         })
 
         it('should not crash when the object source is de-reffed AND the object proxy is de-reffed', async () => {
@@ -476,9 +496,9 @@ describe('contextBridge', () => {
           })
           // Initial Setup
           let info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(3)
-          expect(info.liveProxyValues).to.equal(3)
-          expect(info.objectCount).to.equal(6)
+          const baseFrom = info.liveFromValues;
+          const baseProxy = info.liveProxyValues;
+          const baseCount = info.objectCount;
 
           // Create Reference
           await callWithBindings(async (root: any) => {
@@ -487,9 +507,9 @@ describe('contextBridge', () => {
             root.GCRunner.run()
           })
           info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(4)
-          expect(info.liveProxyValues).to.equal(4)
-          expect(info.objectCount).to.equal(8)
+          expect(info.liveFromValues).to.equal(baseFrom + 1)
+          expect(info.liveProxyValues).to.equal(baseProxy + 1)
+          expect(info.objectCount).to.equal(baseCount + 2)
 
           // Release Reference
           await callWithBindings(async (root: any) => {
@@ -498,12 +518,33 @@ describe('contextBridge', () => {
             root.GCRunner.run()
           })
           info = await getGCInfo()
-          expect(info.liveFromValues).to.equal(3)
-          expect(info.liveProxyValues).to.equal(3)
-          expect(info.objectCount).to.equal(6)
+          expect(info.liveFromValues).to.equal(baseFrom)
+          expect(info.liveProxyValues).to.equal(baseProxy)
+          expect(info.objectCount).to.equal(baseCount)
         })
       }
-    
+
+      if (useSandbox) {
+        it('should not leak the global hold on methods sent across contexts when reloading a sandboxed renderer', async () => {
+          await makeBindingWindow(() => {
+            require('electron').ipcRenderer.on('get-gc-info', e => e.sender.send('gc-info', (contextBridge as any).debugGC()))
+            contextBridge.exposeInMainWorld('example', {
+              getFunction: () => () => 123
+            });
+            require('electron').ipcRenderer.send('window-ready-for-tasking');
+          });
+          const loadPromise = emittedOnce(ipcMain, 'window-ready-for-tasking');
+          const baseValue = (await getGCInfo()).functionCount;
+          await callWithBindings((root: any) => {
+            root.location.reload()
+          })
+          await loadPromise
+          // If this is ever "2" it means we leaked the exposed function and
+          // therefore the entire context after a reload
+          expect((await getGCInfo()).functionCount).to.equal(baseValue);
+        });
+      }
+
       it('it should not let you overwrite existing exposed things', async () => {
         await makeBindingWindow(() => {
           let threw = false

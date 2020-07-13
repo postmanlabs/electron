@@ -176,6 +176,8 @@ const char kWebGL[] = "webgl";
 // navigation.
 const char kNavigateOnDragDrop[] = "navigateOnDragDrop";
 
+const char kEnableWebSQL[] = "enableWebSQL";
+
 }  // namespace options
 
 namespace switches {
@@ -243,6 +245,10 @@ const char kNodeIntegrationInWorker[] = "node-integration-in-worker";
 // environments will be created in sub-frames.
 const char kNodeIntegrationInSubFrames[] = "node-integration-in-subframes";
 
+// Command switch passed to render process to control whether WebSQL api
+// is allowed.
+const char kEnableWebSQL[] = "enable-websql";
+
 // Widevine options
 // Path to Widevine CDM binaries.
 const char kWidevineCdmPath[] = "widevine-cdm-path";
@@ -264,6 +270,9 @@ const char kAuthNegotiateDelegateWhitelist[] =
 
 // If set, include the port in generated Kerberos SPNs.
 const char kEnableAuthNegotiatePort[] = "enable-auth-negotiate-port";
+
+// If set, NTLM v2 is disabled for POSIX platforms.
+const char kDisableNTLMv2[] = "disable-ntlm-v2";
 
 }  // namespace switches
 

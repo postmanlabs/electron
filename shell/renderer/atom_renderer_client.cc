@@ -174,8 +174,11 @@ void AtomRendererClient::WillReleaseScriptContext(
   // avoid memory leaks
   auto* command_line = base::CommandLine::ForCurrentProcess();
   if (command_line->HasSwitch(switches::kNodeIntegrationInSubFrames) ||
-      command_line->HasSwitch(switches::kDisableElectronSiteInstanceOverrides))
+      command_line->HasSwitch(
+          switches::kDisableElectronSiteInstanceOverrides)) {
+    node::RunAtExit(env);
     node::FreeEnvironment(env);
+  }
 
   // ElectronBindings is tracking node environments.
   electron_bindings_->EnvironmentDestroyed(env);
@@ -212,6 +215,9 @@ void AtomRendererClient::WillDestroyWorkerContextOnWorkerThread(
 void AtomRendererClient::SetupMainWorldOverrides(
     v8::Handle<v8::Context> context,
     content::RenderFrame* render_frame) {
+  // We only need to run the isolated bundle if webview is enabled
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kWebviewTag))
+    return;
   // Setup window overrides in the main world context
   // Wrap the bundle into a function that receives the isolatedWorld as
   // an argument.
