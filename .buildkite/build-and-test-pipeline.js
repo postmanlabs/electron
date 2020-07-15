@@ -28,7 +28,7 @@ function buildStepForNix (platform) {
   return {
     label: `:${platform}: :electron: Build`,
     timeout_in_minutes: 150,
-    command: [`bash .buildkite/nix/build-and-test.sh ${platform}`],
+    command: [`.buildkite/nix/build-and-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
       'queue=electron-build-v7.2'
