@@ -67,8 +67,8 @@ buildAndUpload() {
   echo "--- Electron build"
   ninja -C out/Release electron
 
-  echo "--- Strip Electron binaries (Linux)"
   if [[ "$platform" == "linux" ]]
+  echo "--- Strip Electron binaries (Linux)"
   then
     electron/script/copy-debug-symbols.py --target-cpu="x64" --out-dir=out/Release/debug --compress
     electron/script/strip-binaries.py -d out/Release
@@ -105,48 +105,50 @@ buildAndUpload() {
   fi
   ninja -C out/Release electron:electron_mksnapshot_zip
   
-
-  echo "--- Generate type declarationsp (Linux)"
   if [[ "$platform" == "linux" ]]
+  echo "--- Generate type declarationsp (Linux)"
   then
     cd electron
     node script/yarn create-typescript-definitions
     cd ../
   fi
-
+   
   echo "--- Upload artifacts"
-  buildkite-agent artifact upload out/Release/dist.zip 
-  buildkite-agent artifact upload out/Release/chromedriver.zip 
-  buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip 
-  buildkite-agent artifact upload out/Release/mksnapshot.zip 
-  buildkite-agent artifact upload electron/electron-api.json 
-  buildkite-agent artifact upload electron/electron.d.ts
+  cd out
+  buildkite-agent artifact upload Release/dist.zip 
+  buildkite-agent artifact upload Release/chromedriver.zip 
+  buildkite-agent artifact upload ffmpeg/ffmpeg.zip 
+  buildkite-agent artifact upload Release/mksnapshot.zip 
+  cd ..
 
+  if [[ "$platform" == "linux" ]]
+  then
+    buildkite-agent artifact upload electron/electron-api.json 
+    buildkite-agent artifact upload electron/electron.d.ts
+  fi
 
   if [[ "$BUILDKITE_PIPELINE_NAME" != "Electron Build and Test" ]]
   then
-    echo "Upload to GitHub release"
+    echo "Upload to GitHub release and create SHA files"
     cd electron 
     python script/release/uploaders/upload.py
-    
-    echo "Uploading the shasum files"
-    # Going inside the directory to avoid saving the files along with the directory name.
-    # Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
-    # it would always save it as '*.sha256sum
     cd ..
-    cd out/Release
-    buildkite-agent artifact upload "*.sha256sum"
-    cd ..
-    cd ffmpeg
-    buildkite-agent artifact upload "*.sha256sum"
-    cd ../..
-    # cd electron
-    # npm i 
-    # mkdir dist || true
-    # buildkite-agent artifact download "*.sha256sum" dist/
-    # node script/release/release.js --skipVersionCheck
   fi
+
+  echo "Uploading the shasum files"
+  # Going inside the directory to avoid saving the files along with the directory name.
+  # Instead of saving as 'dist/*.sha256sum' (mac/linux) or 'dist\*.sha256sum' (windows),
+  # it would always save it as '*.sha256sum
+  cd out/Release
+  buildkite-agent artifact upload "*.sha256sum"
+  cd ../..
+  # Upload SHA files for electron-api.json and electron.ts
+  cd electron
+  buildkite-agent artifact upload "*.sha256sum"
+  cd ..
 }
+
+  
 
 main() {
   sanity

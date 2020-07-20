@@ -19,20 +19,16 @@ steps:
     agents:
       os: "linux"
       queue: "electron-build-v7.2"
-
   - label: ":mac: :electron: Package"
     command:
-      - "./src/electron/.buildkite/nix/build-and-upload-release.sh darwin"
+      - ".buildkite/nix/build-and-upload-release.sh darwin"
     agents:
       os: "darwin"
       queue: "electron-build-v7.2"
-  # - wait
-  # - label: ":github: :npm: Release and publish"
-  #   command:
-  #     - "npm i"
-  #     - "mkdir dist || true"
-  #     - 'buildkite-agent artifact download "*.sha256sum" dist/'
-  #     - 'node script/release/release.js --skipVersionCheck'
-    # agents:
-    #   nix: "true"
-    #   queue: "electron-build"
+  - wait
+  - label: ":github: Release on Github"
+    command:
+      - ".buildkite/release-and-publish.sh"
+    agents:
+      os: "darwin"
+      queue: "electron-build-v7.2"

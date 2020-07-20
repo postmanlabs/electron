@@ -106,8 +106,9 @@ buildAndUpload() {
   ninja -C out/Release electron:electron_mksnapshot_zip
   
 
-  echo "--- Generate type declarationsp (Linux)"
+
   if [[ "$platform" == "linux" ]]
+  echo "--- Generate type declarationsp [Linux]"
   then
     cd electron
     node script/yarn create-typescript-definitions
@@ -115,12 +116,18 @@ buildAndUpload() {
   fi
 
   echo "--- Upload artifacts"
-  buildkite-agent artifact upload out/Release/dist.zip 
-  buildkite-agent artifact upload out/Release/chromedriver.zip 
-  buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip 
-  buildkite-agent artifact upload out/Release/mksnapshot.zip 
-  buildkite-agent artifact upload electron/electron-api.json 
-  buildkite-agent artifact upload electron/electron.d.ts
+  cd out
+  buildkite-agent artifact upload Release/dist.zip 
+  buildkite-agent artifact upload Release/chromedriver.zip 
+  buildkite-agent artifact upload ffmpeg/ffmpeg.zip 
+  buildkite-agent artifact upload Release/mksnapshot.zip 
+
+  if [[ "$platform" == "linux" ]]
+  then
+    buildkite-agent artifact upload electron/electron-api.json 
+    buildkite-agent artifact upload electron/electron.d.ts
+  fi
+  cd ..
 }
 
 main() {
