@@ -10,7 +10,7 @@ trap cleanup EXIT
 declare platform="$1"
 
 cleanup() {
-  echo "running cleanup"
+  echo "running cleanup yes"
 
   # Try stopping Xvfb only for Linux platform
   if [[ "$platform" == "linux" ]]

@@ -1,5 +1,5 @@
 {
-  "name": "electron",
+  "name": "@postman/electron",
   "version": "7.3.2-postman002",
   "repository": "https://github.com/electron/electron",
   "description": "Build cross platform desktop apps with JavaScript, HTML, and CSS",
