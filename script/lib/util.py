@@ -250,9 +250,7 @@ def get_electron_exec():
     return '{0}/Electron.app/Contents/MacOS/Electron'.format(out_dir)
   elif sys.platform == 'win32':
     return '{0}/electron.exe'.format(out_dir)
-  elif sys.platform == 'linux':
-    return '{0}/electron'.format(out_dir)
-  elif sys.platform == 'linux2':
+  elif sys.platform.startswith('linux'):
     return '{0}/electron'.format(out_dir)
   raise Exception(
       "get_electron_exec: unexpected platform '{0}'".format(sys.platform))
