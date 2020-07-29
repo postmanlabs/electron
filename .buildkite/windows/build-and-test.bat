@@ -14,6 +14,12 @@ CALL RMDIR /s /q src\out
 ECHO "--- Switching directory to <pipeline>/src/electron"
 CALL cd src/electron || EXIT /b !errorlevel!
 
+ECHO "Cleaning old .git/rebase-apply file before running gclient sync"
+CALL cd ..
+CALL RMDIR /s /q .git\rebase-apply
+CALL RMDIR /s /q third_party\electron_node\.git\rebase-apply
+CALL cd electron
+
 ECHO "--- Remove origin and add new origin"
 CALL git remote remove origin || EXIT /b !errorlevel!
 CALL git remote add origin https://github.com/postmanlabs/electron || EXIT /b !errorlevel!
@@ -23,15 +29,15 @@ CALL git fetch || EXIT /b !errorlevel!
 CALL git checkout %BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 CALL git branch --set-upstream-to origin/%BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 
-ECHO "--- git pull"
-CALL git pull || EXIT /b !errorlevel!
+ECHO "--- git reset --hard origin"
+CALL git reset --hard origin/%BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 
 ECHO "--- gclient sync -f"
 CALL gclient sync -f || EXIT /b !errorlevel!
 
 
 ECHO "--- Switching to <pipeline>/src directory"
-CALL cd /D .. || EXIT /b !errorlevel!
+CALL cd /D ..
 
 ECHO "--- Building electron binaries in Release mode for 32 bit"
 CALL gn gen out/Release-x32 --args="import(\"//electron/build/args/release.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
@@ -67,7 +73,7 @@ CALL buildkite-agent artifact upload Release-x32/mksnapshot.zip || EXIT /b !erro
 CALL buildkite-agent artifact upload ffmpeg-x32/ffmpeg.zip || EXIT /b !errorlevel!
 
 ECHO "--- Switch directory <pipeline>/src"
-CALL cd /D .. || EXIT /b !errorlevel!
+CALL cd /D ..
 
 ECHO "--- Zipping the artifacts for 64 bit"
 CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip || EXIT /b !errorlevel!

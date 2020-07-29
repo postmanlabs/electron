@@ -11,7 +11,6 @@ declare platform="$1"
 
 cleanup() {
   echo "running cleanup"
-
   # Try stopping Xvfb only for Linux platform
   if [[ "$platform" == "linux" ]]
   then
@@ -34,6 +33,15 @@ buildAndUpload() {
   echo "--- Swtiching directory <pipeline>/src/electron"
   cd src/electron
 
+  echo "Cleaning .git files before running gclient sync"
+
+  # Removing these two files help us to remove the changes made by builds which 
+  # failed/terminated/exits before completion of the builds steps. 
+  cd ..
+  rm -rf .git/rebase-apply
+  rm -rf third_party/electron_node/.git/rebase-apply
+  cd electron
+  
   echo "--- Removing and adding origin"
   git remote remove origin
   git remote add origin https://github.com/postmanlabs/electron
@@ -43,8 +51,8 @@ buildAndUpload() {
   git checkout $BUILDKITE_BRANCH
   git branch --set-upstream-to origin/$BUILDKITE_BRANCH
 
-  echo "git pull"
-  git pull
+  echo "git reset --hard origin"
+  git reset --hard origin/$BUILDKITE_BRANCH
   
   echo "--- Running gclient sync step"
   gclient sync -f
@@ -67,8 +75,8 @@ buildAndUpload() {
   echo "--- Electron build"
   ninja -C out/Release electron
 
-  echo "--- Strip Electron binaries (Linux)"
   if [[ "$platform" == "linux" ]]
+    echo "--- Strip Electron binaries (Linux)"
   then
     electron/script/copy-debug-symbols.py --target-cpu="x64" --out-dir=out/Release/debug --compress
     electron/script/strip-binaries.py -d out/Release
@@ -105,9 +113,8 @@ buildAndUpload() {
   fi
   ninja -C out/Release electron:electron_mksnapshot_zip
   
-
-  echo "--- Generate type declarationsp (Linux)"
   if [[ "$platform" == "linux" ]]
+  echo "--- Generate type declaration files [Linux]"
   then
     cd electron
     node script/yarn create-typescript-definitions
@@ -115,12 +122,18 @@ buildAndUpload() {
   fi
 
   echo "--- Upload artifacts"
-  buildkite-agent artifact upload out/Release/dist.zip 
-  buildkite-agent artifact upload out/Release/chromedriver.zip 
-  buildkite-agent artifact upload out/ffmpeg/ffmpeg.zip 
-  buildkite-agent artifact upload out/Release/mksnapshot.zip 
-  buildkite-agent artifact upload electron/electron-api.json 
-  buildkite-agent artifact upload electron/electron.d.ts
+  cd out
+  buildkite-agent artifact upload Release/dist.zip 
+  buildkite-agent artifact upload Release/chromedriver.zip 
+  buildkite-agent artifact upload ffmpeg/ffmpeg.zip 
+  buildkite-agent artifact upload Release/mksnapshot.zip 
+
+  if [[ "$platform" == "linux" ]]
+  then
+    buildkite-agent artifact upload electron/electron-api.json 
+    buildkite-agent artifact upload electron/electron.d.ts
+  fi
+  cd ..
 }
 
 main() {

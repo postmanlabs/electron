@@ -86,13 +86,16 @@ def is_verbose_mode():
   return verbose_mode
 
 
-def get_zip_name(name, version, suffix=''):
+def get_zip_name(name, version, suffix='', arch_ia32=''):
   arch = get_target_arch()
   if arch == 'arm':
     arch += 'v7l'
   zip_name = '{0}-{1}-{2}-{3}'.format(name, version, get_platform_key(), arch)
   if suffix:
     zip_name += '-' + suffix
+
+  if(arch_ia32):
+    zip_name = '{0}-{1}-{2}-{3}'.format(name, version, get_platform_key(), 'ia32')
   return zip_name + '.zip'
 
 
