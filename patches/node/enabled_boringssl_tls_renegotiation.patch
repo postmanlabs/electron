@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: administrator <administrator@administrators-Mac-mini.local>
+Date: Mon, 10 Aug 2020 02:23:35 -0400
+Subject: Enabled BoringSSl TLS Renegotiation
+
+
+diff --git a/src/tls_wrap.cc b/src/tls_wrap.cc
+index 2d36c1a2654aa61460a112f59920ee5b2a01233f..4ff1e65ed1c652a2c4ad7867af918feb29d7fb09 100644
+--- a/src/tls_wrap.cc
++++ b/src/tls_wrap.cc
+@@ -145,6 +145,7 @@ void TLSWrap::InitSSL() {
+   if (is_server()) {
+     SSL_set_accept_state(ssl_.get());
+   } else if (is_client()) {
++    SSL_set_renegotiate_mode(ssl_.get(), ssl_renegotiate_freely);
+     // Enough space for server response (hello, cert)
+     crypto::NodeBIO::FromBIO(enc_in_)->set_initial(kInitialClientBufferLength);
+     SSL_set_connect_state(ssl_.get());

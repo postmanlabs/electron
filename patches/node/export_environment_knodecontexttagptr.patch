@@ -5,10 +5,10 @@ Subject: export Environment::kNodeContextTagPtr
 
 
 diff --git a/src/env.h b/src/env.h
-index 8e12764ea3a9a3d4441b276fdf9db9fce7109f72..6240aaf1a078a26b37adfe90023651559582f92d 100644
+index 8647c5408f9eac006df6d655918eedc53b936d72..fe0f52a0a95d67a89b79c34983975060e971e15e 100644
 --- a/src/env.h
 +++ b/src/env.h
-@@ -1336,7 +1336,7 @@ class Environment : public MemoryRetainer {
+@@ -1305,7 +1305,7 @@ class Environment : public MemoryRetainer {
    uint64_t thread_id_;
    std::unordered_set<worker::Worker*> sub_worker_contexts_;
  

@@ -5,7 +5,7 @@ Subject: fix: extern the NativeModuleEnv and options parser for debug builds
 
 
 diff --git a/src/node_native_module_env.h b/src/node_native_module_env.h
-index f662c67be50d404ee5b6cf6e2b8dd5991c59e723..da2d458344fb1006ac11c5b19c6ac5fbbca66a08 100644
+index b91a5059cd1f19d87e5876c372f3ded60681a5df..f81cf8dfb892a8ddd9084c5d9477b17867cae82d 100644
 --- a/src/node_native_module_env.h
 +++ b/src/node_native_module_env.h
 @@ -12,7 +12,7 @@ namespace native_module {
@@ -18,10 +18,10 @@ index f662c67be50d404ee5b6cf6e2b8dd5991c59e723..da2d458344fb1006ac11c5b19c6ac5fb
    static void Initialize(v8::Local<v8::Object> target,
                           v8::Local<v8::Value> unused,
 diff --git a/src/node_options.cc b/src/node_options.cc
-index b9db121250c77e1bc8c35af336361ee444c271e4..a8e287279b31cba12d18300d08f0fd3856069a03 100644
+index 22dcf7bec8312107b129fee583a5f1e10e33ce56..b544a32ef9ff2e40f5a1e528d85cc9a2395709bf 100644
 --- a/src/node_options.cc
 +++ b/src/node_options.cc
-@@ -243,7 +243,7 @@ const EnvironmentOptionsParser _eop_instance{_dop_instance};
+@@ -237,7 +237,7 @@ const EnvironmentOptionsParser _eop_instance{_dop_instance};
  
  // This Parse is not dead code. It is used by embedders (e.g., Electron).
  template <>
@@ -31,7 +31,7 @@ index b9db121250c77e1bc8c35af336361ee444c271e4..a8e287279b31cba12d18300d08f0fd38
    StringVector* const v8_args,
    DebugOptions* const options,
 diff --git a/src/node_options.h b/src/node_options.h
-index 4ce5551284bb5b1b4194905a9fe619f852933405..07f18b5a91c7c42da9f780408e077235a4985f57 100644
+index ce86827024126c6b0d8462c811360057c298ec5b..d53307f9589d4487c220526b8e49b6c7fbd29daf 100644
 --- a/src/node_options.h
 +++ b/src/node_options.h
 @@ -44,7 +44,7 @@ class HostPort {
@@ -43,7 +43,7 @@ index 4ce5551284bb5b1b4194905a9fe619f852933405..07f18b5a91c7c42da9f780408e077235
   public:
    virtual void CheckOptions(std::vector<std::string>* errors) {}
    virtual ~Options() = default;
-@@ -444,7 +444,7 @@ class NODE_EXTERN DebugOptionsParser : public OptionsParser<DebugOptions> {
+@@ -440,7 +440,7 @@ class NODE_EXTERN DebugOptionsParser : public OptionsParser<DebugOptions> {
  
  using StringVector = std::vector<std::string>;
  template <class OptionsType, class = Options>
