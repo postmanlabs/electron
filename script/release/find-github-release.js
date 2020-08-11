@@ -10,14 +10,15 @@ if (process.argv.length < 3) {
 }
 
 const version = process.argv[2];
+const owner = 'postmanlabs';
 
 async function findRelease () {
   const releases = await octokit.repos.listReleases({
-    owner: 'electron',
+    owner,
     repo: version.indexOf('nightly') > 0 ? 'nightlies' : 'electron'
   });
-
   const targetRelease = releases.data.find(release => release.tag_name === version);
+
   let returnObject = {};
 
   if (targetRelease) {
