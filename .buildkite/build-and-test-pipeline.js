@@ -7,7 +7,7 @@ function waitStep() {
 function buildStepForWindows () {
   return {
     label: ':windows: :electron: Build',
-    timeout_in_minutes: 150,
+    timeout_in_minutes: 300,
     command: '.\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-test',
     agents: [
       'os=windows',
@@ -27,7 +27,7 @@ function buildStepForNix (platform) {
 
   return {
     label: `:${platform}: :electron: Build`,
-    timeout_in_minutes: 150,
+    timeout_in_minutes: 300,
     command: [`.buildkite/nix/build-and-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
