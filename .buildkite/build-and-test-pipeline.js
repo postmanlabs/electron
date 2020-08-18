@@ -27,20 +27,20 @@ function buildStepForNix (platform) {
 
   return {
     label: `:${platform}: :electron: Build`,
-    timeout_in_minutes: 150,
+    timeout_in_minutes: 300,
     command: [`.buildkite/nix/build-and-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
-      'queue=electron-build-v7.2'
+      'queue=electron-build-v9'
     ]
   };
 }
 
 function generateBuildPipeline () {
   return [
-    buildStepForWindows(),
+    // buildStepForWindows(),
     buildStepForNix('linux'),
-    buildStepForNix('darwin'),
+    // buildStepForNix('darwin'),
   ];
 }
 
