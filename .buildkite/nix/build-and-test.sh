@@ -128,12 +128,12 @@ buildAndUpload() {
   buildkite-agent artifact upload ffmpeg/ffmpeg.zip 
   buildkite-agent artifact upload Release/mksnapshot.zip 
 
+  cd ..
   if [[ "$platform" == "linux" ]]
   then
     buildkite-agent artifact upload electron/electron-api.json 
     buildkite-agent artifact upload electron/electron.d.ts
   fi
-  cd ..
 }
 
 main() {
