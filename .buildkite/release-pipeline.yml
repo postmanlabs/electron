@@ -4,14 +4,14 @@ steps:
       - ".\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-upload-release ia32"
     agents:
       os: "windows"
-      queue: "electron-build-v7"
+      queue: "electron-build-v9"
 
   - label: ":windows: :electron: Package x64"
     command:
       - ".\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-upload-release x64"
     agents:
       os: "windows"
-      queue: "electron-build-v7"
+      queue: "electron-build-v9"
 
   - label: ":linux: :electron: Package"
     command:
