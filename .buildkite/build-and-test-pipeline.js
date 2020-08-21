@@ -7,11 +7,11 @@ function waitStep() {
 function buildStepForWindows () {
   return {
     label: ':windows: :electron: Build',
-    timeout_in_minutes: 150,
+    timeout_in_minutes: 300,
     command: '.\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\build-and-test',
     agents: [
       'os=windows',
-      'queue=electron-build-v7'
+      'queue=electron-build-v9'
     ]
   };
 }
@@ -27,11 +27,11 @@ function buildStepForNix (platform) {
 
   return {
     label: `:${platform}: :electron: Build`,
-    timeout_in_minutes: 150,
+    timeout_in_minutes: 300,
     command: [`.buildkite/nix/build-and-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
-      'queue=electron-build-v7.2'
+      'queue=electron-build-v9'
     ]
   };
 }
