@@ -33,6 +33,7 @@ type CrashInfo = {
   _productName: string
   _version: string
   upload_file_minidump: Buffer // eslint-disable-line camelcase
+  guid: string
   mainProcessSpecific: 'mps' | undefined
   rendererSpecific: 'rs' | undefined
   globalParam: 'globalValue' | undefined
@@ -229,6 +230,35 @@ ifdescribe(!isLinuxOnArm && !process.mas && !process.env.DISABLE_CRASH_REPORTER_
       expect(crash.rendererSpecific).to.be.undefined();
     });
 
+    describe('with guid', () => {
+      for (const processType of ['main', 'renderer', 'sandboxed-renderer']) {
+        it(`when ${processType} crashes`, async () => {
+          const { port, waitForCrash } = await startServer();
+          runCrashApp(processType, port);
+          const crash = await waitForCrash();
+          expect(crash.guid).to.be.a('string');
+        });
+      }
+
+      it('is a consistent id', async () => {
+        let crash1Guid;
+        let crash2Guid;
+        {
+          const { port, waitForCrash } = await startServer();
+          runCrashApp('main', port);
+          const crash = await waitForCrash();
+          crash1Guid = crash.guid;
+        }
+        {
+          const { port, waitForCrash } = await startServer();
+          runCrashApp('main', port);
+          const crash = await waitForCrash();
+          crash2Guid = crash.guid;
+        }
+        expect(crash2Guid).to.equal(crash1Guid);
+      });
+    });
+
     describe('with extra parameters', () => {
       it('when renderer crashes', async () => {
         const { port, waitForCrash } = await startServer();
@@ -253,19 +283,30 @@ ifdescribe(!isLinuxOnArm && !process.mas && !process.env.DISABLE_CRASH_REPORTER_
   });
 
   ifdescribe(!isLinuxOnArm)('extra parameter limits', () => {
-    it('should truncate extra values longer than 127 characters', async () => {
+    function stitchLongCrashParam (crash: any, paramKey: string) {
+      if (crash[paramKey]) return crash[paramKey];
+      let chunk = 1;
+      let stitched = '';
+      while (crash[`${paramKey}__${chunk}`]) {
+        stitched += crash[`${paramKey}__${chunk}`];
+        chunk++;
+      }
+      return stitched;
+    }
+
+    it('should truncate extra values longer than 5 * 4096 characters', async () => {
       const { port, waitForCrash } = await startServer();
       const { remotely } = await startRemoteControlApp();
       remotely((port: number) => {
         require('electron').crashReporter.start({
           submitURL: `http://127.0.0.1:${port}`,
           ignoreSystemCrashHandler: true,
-          extra: { longParam: 'a'.repeat(130) }
+          extra: { longParam: 'a'.repeat(100000) }
         });
         setTimeout(() => process.crash());
       }, port);
       const crash = await waitForCrash();
-      expect(crash).to.have.property('longParam', 'a'.repeat(127));
+      expect(stitchLongCrashParam(crash, 'longParam')).to.have.lengthOf(160 * 127, 'crash should have truncated longParam');
     });
 
     it('should omit extra keys with names longer than the maximum', async () => {
