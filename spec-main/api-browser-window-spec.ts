@@ -1275,7 +1275,7 @@ describe('BrowserWindow module', () => {
 
     it('preserves transparency', async () => {
       const w = new BrowserWindow({ show: false, transparent: true });
-      w.loadURL('about:blank');
+      w.loadFile(path.join(fixtures, 'pages', 'theme-color.html'));
       await emittedOnce(w, 'ready-to-show');
       w.show();
 
@@ -3883,6 +3883,22 @@ describe('BrowserWindow module', () => {
     });
 
     ifdescribe(process.platform === 'darwin')('fullscreen state', () => {
+      it('should not cause a crash if called when exiting fullscreen', (done) => {
+        const w = new BrowserWindow();
+        w.once('enter-full-screen', async () => {
+          expect(w.isFullScreen()).to.be.true('isFullScreen');
+          await tick();
+          w.setFullScreen(false);
+        });
+
+        w.once('leave-full-screen', () => {
+          expect(w.isFullScreen()).to.be.false('isFullScreen');
+          w.close();
+          done();
+        });
+        w.setFullScreen(true);
+      });
+
       it('can be changed with setFullScreen method', (done) => {
         const w = new BrowserWindow();
         w.once('enter-full-screen', async () => {

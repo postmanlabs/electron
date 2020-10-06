@@ -513,10 +513,12 @@ NativeWindowMac::NativeWindowMac(const gin_helper::Dictionary& options,
   original_level_ = [window_ level];
 }
 
-NativeWindowMac::~NativeWindowMac() {
+NativeWindowMac::~NativeWindowMac() {}
+
+void NativeWindowMac::Cleanup() {
+  DCHECK(!IsClosed());
   ui::NativeTheme::GetInstanceForNativeUi()->RemoveObserver(this);
-  if (wheel_event_monitor_)
-    [NSEvent removeMonitor:wheel_event_monitor_];
+  [NSEvent removeMonitor:wheel_event_monitor_];
 }
 
 void NativeWindowMac::RedrawTrafficLights() {
@@ -612,13 +614,6 @@ void NativeWindowMac::Close() {
 }
 
 void NativeWindowMac::CloseImmediately() {
-  // Remove event monitor before destroying window, otherwise the monitor may
-  // call its callback after window has been destroyed.
-  if (wheel_event_monitor_) {
-    [NSEvent removeMonitor:wheel_event_monitor_];
-    wheel_event_monitor_ = nil;
-  }
-
   // Retain the child window before closing it. If the last reference to the
   // NSWindow goes away inside -[NSWindow close], then bad stuff can happen.
   // See e.g. http://crbug.com/616701.
@@ -1252,8 +1247,11 @@ void NativeWindowMac::AddBrowserView(NativeBrowserView* view) {
   }
 
   add_browser_view(view);
-  auto* native_view =
-      view->GetInspectableWebContentsView()->GetNativeView().GetNativeNSView();
+  auto* iwc_view = view->GetInspectableWebContentsView();
+  if (!iwc_view)
+    return;
+
+  auto* native_view = iwc_view->GetNativeView().GetNativeNSView();
   [[window_ contentView] addSubview:native_view
                          positioned:NSWindowAbove
                          relativeTo:nil];
@@ -1271,8 +1269,11 @@ void NativeWindowMac::RemoveBrowserView(NativeBrowserView* view) {
     return;
   }
 
-  [view->GetInspectableWebContentsView()->GetNativeView().GetNativeNSView()
-      removeFromSuperview];
+  auto* iwc_view = view->GetInspectableWebContentsView();
+  if (!iwc_view)
+    return;
+
+  [iwc_view->GetNativeView().GetNativeNSView() removeFromSuperview];
   remove_browser_view(view);
 
   [CATransaction commit];
