@@ -35,41 +35,43 @@ CALL git reset --hard origin/%BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 ECHO "--- gclient sync -f"
 CALL gclient sync -f || EXIT /b !errorlevel!
 
-
 ECHO "--- Switching to <pipeline>/src directory"
 CALL cd /D .. 
 
+ECHO "--- Setting environment Variable"
+CALL set CHROMIUM_BUILDTOOLS_PATH=%cd%\buildtools
+
 ECHO "--- Building electron binaries in Release mode"
 if "%ARCH%" == "ia32" (
-  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
+  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\") target_cpu=\"x86\" cc_wrapper=\"%SCCACHE_PATH%\"" || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:electron_lib || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:electron_app || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:manifests || EXIT /b !errorlevel!
   CALL gn check out/Release //electron/shell/common/api:mojo || EXIT /b !errorlevel!
-  CALL ninja -C out/Release electron:electron_app || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_app -j 75 || EXIT /b !errorlevel!
   CALL gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
   
 ) ELSE (
-  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\")" || EXIT /b !errorlevel!
+  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"%SCCACHE_PATH%\"" || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:electron_lib || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:electron_app || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:manifests || EXIT /b !errorlevel!
   CALL gn check out/Release //electron/shell/common/api:mojo || EXIT /b !errorlevel!
-  CALL ninja -C out/Release electron:electron_app || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_app -j 75 || EXIT /b !errorlevel!
   CALL gn gen out/ffmpeg "--args=import(\"//electron/build/args/ffmpeg.gn\")" || EXIT /b !errorlevel!
 )
 
 ECHO "--- Zipping the artifacts"
 if "%ARCH%" == "ia32" (
-  CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release electron:electron_dist_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release electron:electron_chromedriver_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip -j 75 || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_dist_zip -j 75 || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_mksnapshot_zip -j 75 || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_chromedriver_zip -j 75 || EXIT /b !errorlevel!
 ) ELSE (
-  CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release electron:electron_dist_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release electron:electron_mksnapshot_zip || EXIT /b !errorlevel!
-  CALL ninja -C out/Release electron:electron_chromedriver_zip || EXIT /b !errorlevel!
+  CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip -j 75 || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_dist_zip -j 75 || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_mksnapshot_zip -j 75 || EXIT /b !errorlevel!
+  CALL ninja -C out/Release electron:electron_chromedriver_zip -j 75 || EXIT /b !errorlevel!
 )
 
 ECHO "--- Switch directory <pipeline>/src/out"
