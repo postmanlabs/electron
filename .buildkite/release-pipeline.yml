@@ -19,18 +19,18 @@ steps:
     agents:
       os: "linux"
       queue: "electron-build-v9"
-  - label: ":mac: :electron: Package"
-    command:
-      - ".buildkite/nix/build-and-upload-release.sh darwin"
-    agents:
-      os: "darwin"
-      queue: "electron-build-v9"
+  # - label: ":mac: :electron: Package"
+  #   command:
+  #     - ".buildkite/nix/build-and-upload-release.sh darwin"
+  #   agents:
+  #     os: "darwin"
+  #     queue: "electron-build-v9"
 
-  - wait
+  # - wait
   
-  - label: ":github: Release on Github"
-    command:
-      - ".buildkite/release-and-publish.sh"
-    agents:
-      os: "darwin"
-      queue: "electron-build-v9"
+  # - label: ":github: Release on Github"
+  #   command:
+  #     - ".buildkite/release-and-publish.sh"
+  #   agents:
+  #     os: "darwin"
+  #     queue: "electron-build-v9"

@@ -55,29 +55,30 @@ buildAndUpload() {
   git reset --hard origin/$BUILDKITE_BRANCH
   
   echo "--- Running gclient sync step"
-  gclient sync -f
+  # gclient sync -f
 
   echo "--- Swtiching directory <pipeline>/src"
   cd ..
   
-  if [[ "$platform" == "linux" ]]
-  then
-    echo "--- Set GN_EXTRA_ARGS (linux)"
-    export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
-  fi
-  
   export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
+  export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
+  export SCCACHE_BUCKET="electronjs-sccache-ci"
+  export SCCACHE_TWO_TIER=true
+
+  echo "Values"
+  echo $GN_EXTRA_ARGS
+  echo $CHROMIUM_BUILDTOOLS_PATH
 
   echo "--- Running cleanup old files"
   rm -rf out
 
-  echo "--- Running gn checks"
   
   if [[ "$platform" == "darwin" ]]
   then
-    echo "--- Step to fix sync in (Darwin)"
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
+    echo "--- Running gn checks"
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
   else
+    echo "--- Running gn checks"
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
   fi
   
@@ -149,7 +150,6 @@ buildAndUpload() {
     buildkite-agent artifact upload electron/electron-api.json 
     buildkite-agent artifact upload electron/electron.d.ts
   fi
-  
 }
 
 main() {
