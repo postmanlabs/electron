@@ -86,7 +86,7 @@ ifdescribe(!process.arch.includes('arm') && process.platform !== 'win32')('deskt
     expect(sources).to.be.empty();
   });
 
-  it('disabling thumbnail should return empty images', async () => {
+  it.skip('disabling thumbnail should return empty images', async () => {
     const w2 = new BrowserWindow({ show: false, width: 200, height: 200 });
     const wShown = emittedOnce(w2, 'show');
     w2.show();
