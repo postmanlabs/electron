@@ -60,21 +60,31 @@ buildAndUpload() {
 
   echo "--- Swtiching directory <pipeline>/src"
   cd ..
+
+  if [[ "$platform" == "linux" ]]
+  then
+    echo "--- Set GN_EXTRA_ARGS (linux)"
+    export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
+  fi
   
   export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
+  export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
+  export SCCACHE_BUCKET="electronjs-sccache-ci"
+  export SCCACHE_TWO_TIER=true
 
   echo "--- Running cleanup old files"
   rm -rf out
 
   echo "--- Running gn checks"
-  gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
+  gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
+
   gn check out/Release //electron:electron_lib
   gn check out/Release //electron:electron_app
   gn check out/Release //electron:manifests
   gn check out/Release //electron/shell/common/api:mojo
 
   echo "--- Electron build"
-  ninja -C out/Release electron
+  ninja -C out/Release electron -j 10
 
   if [[ "$platform" == "linux" ]]
     echo "--- Strip Electron binaries (Linux)"
@@ -85,7 +95,7 @@ buildAndUpload() {
   fi
 
   echo "--- Build Electron distributed binary"
-  ninja -C out/Release electron:electron_dist_zip
+  ninja -C out/Release electron:electron_dist_zip -j 10
 
   if [[ "$platform" == "linux" ]]
   then
@@ -95,24 +105,24 @@ buildAndUpload() {
   fi
 
   echo "--- Build chromedriver"
-  ninja -C out/Release chrome/test/chromedriver
+  ninja -C out/Release chrome/test/chromedriver -j 10
   [[ "$platform" == "linux" ]] && electron/script/strip-binaries.py --target-cpu="x64" --file $PWD/out/Release/chromedriver
-  ninja -C out/Release electron:electron_chromedriver_zip
+  ninja -C out/Release electron:electron_chromedriver_zip -j 10
 
   echo "--- Build ffmpeg"
   gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\")"
-  ninja -C out/ffmpeg electron:electron_ffmpeg_zip
+  ninja -C out/ffmpeg electron:electron_ffmpeg_zip -j 10
   
 
   echo "--- Build mksnapshot"
-  ninja -C out/Release electron:electron_mksnapshot
+  ninja -C out/Release electron:electron_mksnapshot -j 10
 
   if [[ "$platform" == "linux" ]]
   then
     electron/script/strip-binaries.py --file $PWD/out/Release/mksnapshot
     electron/script/strip-binaries.py --file $PWD/out/Release/v8_context_snapshot_generator
   fi
-  ninja -C out/Release electron:electron_mksnapshot_zip
+  ninja -C out/Release electron:electron_mksnapshot_zip -j 10
   
   if [[ "$platform" == "linux" ]]
   echo "--- Generate type declaration files (Linux)"
