@@ -62,7 +62,7 @@ describe('shell module', () => {
     });
   });
 
-  describe('shell.moveItemToTrash()', () => {
+  describe.skip('shell.moveItemToTrash()', () => {
     it('moves an item to the trash', async () => {
       const dir = await fs.mkdtemp(path.resolve(app.getPath('temp'), 'electron-shell-spec-'));
       const filename = path.join(dir, 'temp-to-be-deleted');

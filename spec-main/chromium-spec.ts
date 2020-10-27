@@ -1329,7 +1329,7 @@ describe('font fallback', () => {
     }
   }
 
-  it('should use Helvetica for sans-serif on Mac, and Arial on Windows and Linux', async () => {
+  it.skip('should use Helvetica for sans-serif on Mac, and Arial on Windows and Linux', async () => {
     const html = `<body style="font-family: sans-serif">test</body>`;
     const fonts = await getRenderedFonts(html);
     expect(fonts).to.be.an('array');
