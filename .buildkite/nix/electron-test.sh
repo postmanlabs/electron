@@ -70,15 +70,17 @@ buildAndUpload() {
 
   echo "--- Running gn checks"
   gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") $GN_EXTRA_ARGS"
-  
 
   echo "--- Electron build"
-  ninja -C out/Testing electron -j 10
+  ninja -C out/Testing electron -j 25
 
   echo "--- Electron testing bianries"
   ninja -C out/Testing third_party/electron_node:headers
 
-  npm run test
+  echo "Switch to directory <pipeline>/src/electron"
+  xvfb-run --auto-servernum --server-args='-screen 0, 1280x1024x24' node ./script/spec-runner.js
+
+  cd ..
 }
 
 main() {
