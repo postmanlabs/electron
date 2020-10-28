@@ -38,9 +38,9 @@ function buildStepForNix (platform) {
 
 function generateBuildPipeline () {
   return [
-    // buildStepForWindows(),
-    buildStepForNix('linux'),
-    buildStepForNix('darwin'),
+    buildStepForWindows(),
+    // buildStepForNix('linux'),
+    // buildStepForNix('darwin'),
   ];
 }
 

@@ -49,6 +49,12 @@ CALL gn gen out/Testing --args="import(\"//electron/build/args/release.gn\") tar
 CALL ninja -C out/Testing electron:electron_app -j 75 || EXIT /b !errorlevel!
 CALL ninja -C out/Testing third_party\electron_node:headers || EXIT /b !errorlevel!
 
+CALL cd out/Testing || EXIT /b !errorlevel!
+CALL mkdir gen\node_headers\Release || EXIT /b !errorlevel!
+CALL copy electron.lib gen\node_headers\Release\node.lib || EXIT /b !errorlevel!
 
+CALL cd /D ../.. || EXIT /b !errorlevel!
+CALL cd electron || EXIT /b !errorlevel!
+CALL node ./script/spec-runner.js || EXIT /b !errorlevel!
 
 EXIT /b
