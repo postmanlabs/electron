@@ -77,6 +77,9 @@ buildAndUpload() {
   echo "--- Electron testing bianries"
   ninja -C out/Testing third_party/electron_node:headers
 
+  echo "--- Electron shell_browser_ui_unittests bianry"
+  ninja -C out/Testing shell_browser_ui_unittests
+
   echo "--- Switch to directory <pipeline>/src/electron"
   cd electron
 
