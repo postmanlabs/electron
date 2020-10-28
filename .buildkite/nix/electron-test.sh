@@ -77,7 +77,10 @@ buildAndUpload() {
   echo "--- Electron testing bianries"
   ninja -C out/Testing third_party/electron_node:headers
 
-  echo "Switch to directory <pipeline>/src/electron"
+  echo "--- Switch to directory <pipeline>/src/electron"
+  cd electron
+
+  echo "--- Running unit test"
   xvfb-run --auto-servernum --server-args='-screen 0, 1280x1024x24' node ./script/spec-runner.js
 
   cd ..
