@@ -17,13 +17,13 @@ describe('modules support', () => {
   describe('third-party module', () => {
     ifdescribe(nativeModulesEnabled)('echo', () => {
       afterEach(closeAllWindows);
-      it('can be required in renderer', async () => {
+      ifit(process.platform !== 'win32')('can be required in renderer', async () => {
         const w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true } });
         w.loadURL('about:blank');
         await expect(w.webContents.executeJavaScript(`{ require('echo'); null }`)).to.be.fulfilled();
       });
 
-      ifit(features.isRunAsNodeEnabled())('can be required in node binary', function (done) {
+      ifit(features.isRunAsNodeEnabled() && process.platform !== 'win32')('can be required in node binary', function (done) {
         const child = childProcess.fork(path.join(fixtures, 'module', 'echo.js'));
         child.on('message', (msg) => {
           expect(msg).to.equal('ok');
