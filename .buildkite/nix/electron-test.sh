@@ -69,10 +69,15 @@ buildAndUpload() {
   rm -rf out
 
   echo "--- Running gn checks"
-  gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") $GN_EXTRA_ARGS"
+  gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\")"
 
   echo "--- Electron build"
-  ninja -C out/Testing electron -j 10
+  if [[ "$platform" == "linux" ]]
+  then
+    ninja -C out/Testing electron -j 10
+  else
+    ninja -C out/Testing electron -j 5
+  fi
 
   echo "--- Electron testing bianries"
   ninja -C out/Testing third_party/electron_node:headers
@@ -84,7 +89,12 @@ buildAndUpload() {
   cd electron
 
   echo "--- Running unit test"
-  xvfb-run --auto-servernum --server-args='-screen 0, 1280x1024x24' node ./script/spec-runner.js
+  if [[ "$platform" == "linux" ]]
+  then
+    xvfb-run --auto-servernum --server-args='-screen 0, 1280x1024x24' node ./script/spec-runner.js
+  else
+    node ./script/spec-runner.js
+  fi
 
   cd ..
 }
