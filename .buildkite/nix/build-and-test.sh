@@ -77,7 +77,12 @@ buildAndUpload() {
   gn check out/Release //electron/shell/common/api:mojo
 
   echo "--- Electron build"
-  ninja -C out/Release electron -j 10
+  if [[ "$platform" == "linux" ]]
+  then
+    ninja -C out/Release electron -j 75
+  else 
+    ninja -C out/Release electron -j 5
+  fi
 
   if [[ "$platform" == "linux" ]]
     echo "--- Strip Electron binaries (Linux)"
@@ -88,7 +93,7 @@ buildAndUpload() {
   fi
 
   echo "--- Build Electron distributed binary"
-  ninja -C out/Release electron:electron_dist_zip -j 10
+  ninja -C out/Release electron:electron_dist_zip
 
   if [[ "$platform" == "linux" ]]
   then
@@ -98,24 +103,31 @@ buildAndUpload() {
   fi
 
   echo "--- Build chromedriver"
-  ninja -C out/Release chrome/test/chromedriver -j 10
+  if [[ "$platform" == "linux" ]]
+  then
+    ninja -C out/Release chrome/test/chromedriver -j 75
+  else 
+    ninja -C out/Release chrome/test/chromedriver -j 5
+  fi
+  
   [[ "$platform" == "linux" ]] && electron/script/strip-binaries.py --target-cpu="x64" --file $PWD/out/Release/chromedriver
-  ninja -C out/Release electron:electron_chromedriver_zip -j 10
+  ninja -C out/Release electron:electron_chromedriver_zip 
 
   echo "--- Build ffmpeg"
   gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\")"
-  ninja -C out/ffmpeg electron:electron_ffmpeg_zip -j 10
+  ninja -C out/ffmpeg electron:electron_ffmpeg_zip 
   
 
   echo "--- Build mksnapshot"
-  ninja -C out/Release electron:electron_mksnapshot -j 10
+  ninja -C out/Release electron:electron_mksnapshot 
 
   if [[ "$platform" == "linux" ]]
   then
     electron/script/strip-binaries.py --file $PWD/out/Release/mksnapshot
     electron/script/strip-binaries.py --file $PWD/out/Release/v8_context_snapshot_generator
   fi
-  ninja -C out/Release electron:electron_mksnapshot_zip -j 10
+
+  ninja -C out/Release electron:electron_mksnapshot_zip 
   
   if [[ "$platform" == "linux" ]]
   echo "--- Generate type declaration files [Linux]"
