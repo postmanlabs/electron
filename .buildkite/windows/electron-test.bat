@@ -55,6 +55,6 @@ CALL copy electron.lib gen\node_headers\Release\node.lib || EXIT /b !errorlevel!
 
 CALL cd /D ../.. || EXIT /b !errorlevel!
 CALL cd electron || EXIT /b !errorlevel!
-CALL node ./script/spec-runner.js || EXIT /b !errorlevel!
+CALL node ./script/spec-runner.js 
 
 EXIT /b
