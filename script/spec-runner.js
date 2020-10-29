@@ -139,7 +139,7 @@ async function runRemoteBasedElectronTests () {
   if (status !== 0) {
     const textStatus = process.platform === 'win32' ? `0x${status.toString(16)}` : status.toString();
     console.log(`${fail} Electron tests failed with code ${textStatus}.`);
-    process.exit(1);
+    // process.exit(1);
   }
   console.log(`${pass} Electron remote process tests passed.`);
 }
@@ -214,7 +214,7 @@ async function runMainProcessElectronTests () {
     } else {
       console.log(`${fail} Electron tests failed with kill signal ${signal}.`);
     }
-    process.exit(1);
+    // process.exit(1);
   }
   console.log(`${pass} Electron main process tests passed.`);
 }
