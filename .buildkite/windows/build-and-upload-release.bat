@@ -43,7 +43,7 @@ CALL set CHROMIUM_BUILDTOOLS_PATH=%cd%\buildtools
 
 ECHO "--- Building electron binaries in Release mode"
 if "%ARCH%" == "ia32" (
-  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
+  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\") target_cpu=\"x86\" cc_wrapper=\"%SCCACHE_PATH%\"" || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:electron_lib || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:electron_app || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:manifests || EXIT /b !errorlevel!
@@ -52,7 +52,7 @@ if "%ARCH%" == "ia32" (
   CALL gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
   
 ) ELSE (
-  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\")" || EXIT /b !errorlevel!
+  CALL gn gen out/Release --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"%SCCACHE_PATH%\"" || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:electron_lib || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:electron_app || EXIT /b !errorlevel!
   CALL gn check out/Release //electron:manifests || EXIT /b !errorlevel!
