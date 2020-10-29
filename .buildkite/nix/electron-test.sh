@@ -69,14 +69,20 @@ buildAndUpload() {
   rm -rf out
 
   echo "--- Running gn checks"
-  gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\")"
+  echo "--- Electron build"
+  if [[ "$platform" == "linux" ]]
+  then
+    gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") $GN_EXTRA_ARGS"
+  else
+    gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\")"
+  fi
 
   echo "--- Electron build"
   if [[ "$platform" == "linux" ]]
   then
-    ninja -C out/Testing electron -j 10
+    ninja -C out/Testing electron -j 25
   else
-    ninja -C out/Testing electron -j 5
+    ninja -C out/Testing electron -j 1
   fi
 
   echo "--- Electron testing bianries"
