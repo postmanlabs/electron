@@ -74,7 +74,7 @@ buildAndUpload() {
   then
     gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") $GN_EXTRA_ARGS"
   else
-    gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\")"
+    gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") $GN_EXTRA_ARGS"
   fi
 
   echo "--- Electron build"
@@ -82,7 +82,7 @@ buildAndUpload() {
   then
     ninja -C out/Testing electron -j 25
   else
-    ninja -C out/Testing electron -j 1
+    ninja -C out/Testing electron -j 10
   fi
 
   echo "--- Electron testing bianries"
