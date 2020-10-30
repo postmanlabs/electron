@@ -51,7 +51,7 @@ function buildStepForDarwin (platform) {
     command: [`.buildkite/nix/electron-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
-      'queue=electron-build-v9'
+      'queue=electron-build-v7'
     ]
   };
 }
@@ -59,7 +59,7 @@ function buildStepForDarwin (platform) {
 function generateBuildPipeline () {
   return [
     // buildStepForWindows(),
-    buildStepForLinux('linux'),
+    // buildStepForLinux('linux'),
     buildStepForDarwin('darwin'),
   ];
 }
