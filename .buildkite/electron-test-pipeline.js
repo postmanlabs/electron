@@ -11,7 +11,27 @@ function buildStepForWindows () {
     command: '.\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\electron-test',
     agents: [
       'os=windows',
-      'queue=electron-build-v9'
+      'queue=electron-test-v9'
+    ]
+  };
+}
+
+/**
+ * Returns the build step for darwin
+ * @param {String} platform 'darwin'
+ */
+function buildStepForLinux (platform) {
+  if(!process.env.BUILDKITE_BRANCH){
+    return [];
+  }
+
+  return {
+    label: `:${platform}: :electron: Build`,
+    timeout_in_minutes: 300,
+    command: [`.buildkite/nix/electron-test.sh ${platform}`],
+    agents: [
+      `os=${platform}`,
+      'queue=electron-test-v9'
     ]
   };
 }
@@ -20,7 +40,7 @@ function buildStepForWindows () {
  * Returns the build step for linux or darwin
  * @param {String} platform can be 'linux' or 'darwin'
  */
-function buildStepForNix (platform) {
+function buildStepForDarwin (platform) {
   if(!process.env.BUILDKITE_BRANCH){
     return [];
   }
@@ -39,8 +59,8 @@ function buildStepForNix (platform) {
 function generateBuildPipeline () {
   return [
     buildStepForWindows(),
-    // buildStepForNix('linux'),
-    // buildStepForNix('darwin'),
+    // buildStepForLinux('linux'),
+    // buildStepForDarwin('darwin'),
   ];
 }
 

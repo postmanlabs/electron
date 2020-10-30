@@ -69,7 +69,12 @@ buildAndUpload() {
   rm -rf out
 
   echo "--- Running gn checks"
-  gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") $GN_EXTRA_ARGS"
+  if [[ "$platform" == "linux" ]]
+  then
+    gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") $GN_EXTRA_ARGS"
+  else
+    gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\")"
+  fi
 
   echo "--- Electron build"
   if [[ "$platform" == "linux" ]]
