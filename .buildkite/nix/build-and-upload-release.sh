@@ -118,7 +118,7 @@ buildAndUpload() {
   fi
 
   [[ "$platform" == "linux" ]] && electron/script/strip-binaries.py --target-cpu="x64" --file $PWD/out/Release/chromedriver
-  ninja -C out/Release electron:electron_chromedriver_zip -j 10
+  ninja -C out/Release electron:electron_chromedriver_zip -j 5
 
   echo "--- Build ffmpeg"
   gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\")"
@@ -133,7 +133,7 @@ buildAndUpload() {
     electron/script/strip-binaries.py --file $PWD/out/Release/mksnapshot
     electron/script/strip-binaries.py --file $PWD/out/Release/v8_context_snapshot_generator
   fi
-  ninja -C out/Release electron:electron_mksnapshot_zip -j 10
+  ninja -C out/Release electron:electron_mksnapshot_zip -j 5
   
   if [[ "$platform" == "linux" ]]
   echo "--- Generate type declaration files (Linux)"
