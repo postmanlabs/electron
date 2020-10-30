@@ -80,7 +80,7 @@ buildAndUpload() {
   echo "--- Electron build"
   if [[ "$platform" == "linux" ]]
   then
-    ninja -C out/Testing electron -j 10
+    ninja -C out/Testing electron -j 25
   else
     ninja -C out/Testing electron -j 10
   fi
