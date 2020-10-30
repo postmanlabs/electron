@@ -59,8 +59,8 @@ function buildStepForDarwin (platform) {
 function generateBuildPipeline () {
   return [
     // buildStepForWindows(),
-    // buildStepForLinux('linux'),
-    buildStepForDarwin('darwin'),
+    buildStepForLinux('linux'),
+    // buildStepForDarwin('darwin'),
   ];
 }
 
