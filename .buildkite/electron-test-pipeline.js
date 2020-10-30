@@ -51,7 +51,7 @@ function buildStepForDarwin (platform) {
     command: [`.buildkite/nix/electron-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
-      'queue=electron-build-v7'
+      'queue=electron-test-v9'
     ]
   };
 }
