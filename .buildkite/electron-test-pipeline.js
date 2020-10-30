@@ -7,7 +7,7 @@ function waitStep() {
 function buildStepForWindows () {
   return {
     label: ':windows: :electron: Build',
-    timeout_in_minutes: 300,
+    timeout_in_minutes: 600,
     command: '.\\src\\buildkite-upload-script\\electron\\.buildkite\\windows\\electron-test',
     agents: [
       'os=windows',
@@ -27,7 +27,7 @@ function buildStepForLinux (platform) {
 
   return {
     label: `:${platform}: :electron: Build`,
-    timeout_in_minutes: 300,
+    timeout_in_minutes: 600,
     command: [`.buildkite/nix/electron-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
@@ -47,11 +47,11 @@ function buildStepForDarwin (platform) {
 
   return {
     label: `:${platform}: :electron: Build`,
-    timeout_in_minutes: 300,
+    timeout_in_minutes: 600,
     command: [`.buildkite/nix/electron-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
-      'queue=electron-build-v9'
+      'queue=electron-test-v9'
     ]
   };
 }
@@ -59,8 +59,8 @@ function buildStepForDarwin (platform) {
 function generateBuildPipeline () {
   return [
     buildStepForWindows(),
-    // buildStepForLinux('linux'),
-    // buildStepForDarwin('darwin'),
+    buildStepForLinux('linux'),
+    buildStepForDarwin('darwin'),
   ];
 }
 
