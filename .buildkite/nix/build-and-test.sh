@@ -55,7 +55,7 @@ buildAndUpload() {
   git reset --hard origin/$BUILDKITE_BRANCH
   
   echo "--- Running gclient sync step"
-  # gclient sync -f
+  gclient sync -f
 
   echo "--- Swtiching directory <pipeline>/src"
   cd ..
