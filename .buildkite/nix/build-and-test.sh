@@ -79,9 +79,9 @@ buildAndUpload() {
   echo "--- Electron build"
   if [[ "$platform" == "linux" ]]
   then
-    ninja -C out/Release electron -j 75
+    ninja -C out/Release electron -j 25
   else 
-    ninja -C out/Release electron -j 5
+    ninja -C out/Release electron -j 10
   fi
 
   if [[ "$platform" == "linux" ]]
