@@ -60,12 +60,6 @@ buildAndUpload() {
 
   echo "--- Swtiching directory <pipeline>/src"
   cd ..
-
-  if [[ "$platform" == "linux" ]]
-  then
-    echo "--- Set GN_EXTRA_ARGS (linux)"
-    export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
-  fi
   
   export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
   export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""

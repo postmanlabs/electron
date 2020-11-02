@@ -35,7 +35,6 @@ CALL git reset --hard origin/%BUILDKITE_BRANCH% || EXIT /b !errorlevel!
 ECHO "--- gclient sync -f"
 CALL gclient sync -f || EXIT /b !errorlevel!
 
-
 ECHO "--- Switching to <pipeline>/src directory"
 CALL cd /D ..
 
