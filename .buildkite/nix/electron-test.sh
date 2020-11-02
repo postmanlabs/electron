@@ -76,7 +76,7 @@ buildAndUpload() {
     gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") $GN_EXTRA_ARGS"
   fi
 
-  echo "--- Electron build"
+  echo "--- Electron build in testing mode"
   if [[ "$platform" == "linux" ]]
   then
     ninja -C out/Testing electron -j 25
