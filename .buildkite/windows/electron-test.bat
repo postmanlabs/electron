@@ -43,8 +43,8 @@ ECHO "--- Setting environment Variable"
 CALL set CHROMIUM_BUILDTOOLS_PATH=%cd%\buildtools
 CALL set SCCACHE_PATH=%cd%\electron\external_binaries\sccache.exe
 
-ECHO "--- Building electron binaries in Release mode for 32 bit"
-CALL gn gen out/Testing --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"%SCCACHE_PATH%\"" || EXIT /b !errorlevel!
+ECHO "--- Building electron binaries in Testing mode"
+CALL gn gen out/Testing --args="import(\"//electron/build/args/testing.gn\") cc_wrapper=\"%SCCACHE_PATH%\"" || EXIT /b !errorlevel!
 
 CALL ninja -C out/Testing electron:electron_app -j 25 || EXIT /b !errorlevel!
 CALL ninja -C out/Testing third_party\electron_node:headers || EXIT /b !errorlevel!
