@@ -119,7 +119,7 @@ describe('app module', () => {
     });
   });
 
-  describe('app.getLocaleCountryCode()', () => {
+  describe.skip('app.getLocaleCountryCode()', () => {
     it('should be empty or have length of two', () => {
       let expectedLength = 2;
       if (process.platform === 'linux') {

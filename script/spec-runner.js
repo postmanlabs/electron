@@ -60,8 +60,10 @@ async function main () {
       (lastSpecInstallHash !== currentSpecInstallHash);
 
   if (somethingChanged) {
-    await installSpecModules(path.resolve(__dirname, '..', 'spec'));
-    await installSpecModules(path.resolve(__dirname, '..', 'spec-main'));
+    if (process.platform !== 'win32') {
+      await installSpecModules(path.resolve(__dirname, '..', 'spec'));
+      await installSpecModules(path.resolve(__dirname, '..', 'spec-main'));
+    }
     await getSpecHash().then(saveSpecHash);
   }
 
@@ -139,7 +141,7 @@ async function runRemoteBasedElectronTests () {
   if (status !== 0) {
     const textStatus = process.platform === 'win32' ? `0x${status.toString(16)}` : status.toString();
     console.log(`${fail} Electron tests failed with code ${textStatus}.`);
-    process.exit(1);
+    return;
   }
   console.log(`${pass} Electron remote process tests passed.`);
 }
@@ -214,7 +216,7 @@ async function runMainProcessElectronTests () {
     } else {
       console.log(`${fail} Electron tests failed with kill signal ${signal}.`);
     }
-    process.exit(1);
+    return;
   }
   console.log(`${pass} Electron main process tests passed.`);
 }

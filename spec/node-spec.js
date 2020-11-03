@@ -326,7 +326,7 @@ describe('node feature', () => {
       expect(() => process.stdout).to.not.throw();
     });
 
-    it('does not throw an exception when calling write()', () => {
+    it.skip('does not throw an exception when calling write()', () => {
       expect(() => {
         process.stdout.write('test');
       }).to.not.throw();

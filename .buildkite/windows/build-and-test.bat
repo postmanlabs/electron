@@ -54,8 +54,8 @@ CALL gn gen out/ffmpeg-x32 --args="import(\"//electron/build/args/ffmpeg.gn\") t
 
 ECHO "--- Zipping the artifacts for 32 bit"
 CALL ninja -C out/ffmpeg-x32 electron:electron_ffmpeg_zip -j 75 || EXIT /b !errorlevel!
-CALL ninja -C out/Release-x32 electron:electron_dist_zip  -j 75 || EXIT /b !errorlevel!
-CALL ninja -C out/Release-x32 electron:electron_mksnapshot_zip  -j 75 || EXIT /b !errorlevel!
+CALL ninja -C out/Release-x32 electron:electron_dist_zip -j 75 || EXIT /b !errorlevel!
+CALL ninja -C out/Release-x32 electron:electron_mksnapshot_zip -j 75 || EXIT /b !errorlevel!
 CALL ninja -C out/Release-x32 electron:electron_chromedriver_zip -j 75 || EXIT /b !errorlevel!
 
 ECHO "--- Switch directory <pipeline>/src/out"
