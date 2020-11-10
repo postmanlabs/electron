@@ -13,6 +13,7 @@
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
 #include "shell/browser/browser.h"
+#include "shell/browser/native_browser_view.h"
 #include "shell/browser/unresponsive_suppressor.h"
 #include "shell/browser/web_contents_preferences.h"
 #include "shell/browser/window_list.h"
@@ -301,8 +302,15 @@ void BrowserWindow::OnWindowIsKeyChanged(bool is_key) {
 
 void BrowserWindow::OnWindowResize() {
 #if defined(OS_MACOSX)
-  if (!draggable_regions_.empty())
+  if (!draggable_regions_.empty()) {
     UpdateDraggableRegions(draggable_regions_);
+  } else {
+    // Ensure draggable bounds are recalculated for BrowserViews if any exist.
+    auto browser_views = window_->browser_views();
+    for (NativeBrowserView* view : browser_views) {
+      view->UpdateDraggableRegions(draggable_regions_);
+    }
+  }
 #endif
   TopLevelWindow::OnWindowResize();
 }
@@ -409,19 +417,6 @@ v8::Local<v8::Value> BrowserWindow::GetWebContents(v8::Isolate* isolate) {
   if (web_contents_.IsEmpty())
     return v8::Null(isolate);
   return v8::Local<v8::Value>::New(isolate, web_contents_);
-}
-
-// Convert draggable regions in raw format to SkRegion format.
-std::unique_ptr<SkRegion> BrowserWindow::DraggableRegionsToSkRegion(
-    const std::vector<mojom::DraggableRegionPtr>& regions) {
-  auto sk_region = std::make_unique<SkRegion>();
-  for (const auto& region : regions) {
-    sk_region->op(
-        {region->bounds.x(), region->bounds.y(), region->bounds.right(),
-         region->bounds.bottom()},
-        region->draggable ? SkRegion::kUnion_Op : SkRegion::kDifference_Op);
-  }
-  return sk_region;
 }
 
 void BrowserWindow::ScheduleUnresponsiveEvent(int ms) {

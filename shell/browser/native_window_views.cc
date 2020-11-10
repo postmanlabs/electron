@@ -20,6 +20,7 @@
 #include "content/public/browser/desktop_media_id.h"
 #include "shell/browser/api/electron_api_web_contents.h"
 #include "shell/browser/native_browser_view_views.h"
+#include "shell/browser/ui/drag_util.h"
 #include "shell/browser/ui/inspectable_web_contents.h"
 #include "shell/browser/ui/inspectable_web_contents_view.h"
 #include "shell/browser/ui/views/root_view.h"
@@ -1274,8 +1275,8 @@ gfx::Rect NativeWindowViews::WindowBoundsToContentBounds(
 }
 
 void NativeWindowViews::UpdateDraggableRegions(
-    std::unique_ptr<SkRegion> region) {
-  draggable_region_ = std::move(region);
+    const std::vector<mojom::DraggableRegionPtr>& regions) {
+  draggable_region_ = DraggableRegionsToSkRegion(regions);
 }
 
 #if defined(OS_WIN)
@@ -1329,8 +1330,7 @@ void NativeWindowViews::OnWidgetBoundsChanged(views::Widget* changed_widget,
     int width_delta = new_bounds.width() - widget_size_.width();
     int height_delta = new_bounds.height() - widget_size_.height();
     for (NativeBrowserView* item : browser_views()) {
-      NativeBrowserViewViews* native_view =
-          static_cast<NativeBrowserViewViews*>(item);
+      auto* native_view = static_cast<NativeBrowserViewViews*>(item);
       native_view->SetAutoResizeProportions(widget_size_);
       native_view->AutoResize(new_bounds, width_delta, height_delta);
     }
@@ -1398,7 +1398,7 @@ bool NativeWindowViews::ShouldDescendIntoChildForEventHandling(
 
   // And the events on border for dragging resizable frameless window.
   if (!has_frame() && CanResize()) {
-    FramelessView* frame =
+    auto* frame =
         static_cast<FramelessView*>(widget()->non_client_view()->frame_view());
     return frame->ResizingBorderHitTest(location) == HTNOWHERE;
   }

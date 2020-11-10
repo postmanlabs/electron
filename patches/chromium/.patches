@@ -81,7 +81,6 @@ feat_allow_disabling_blink_scheduler_throttling_per_renderview.patch
 accessible_pane_view.patch
 fixme_grit_conflicts.patch
 fix_use_the_new_mediaplaypause_key_listener_for_internal_chrome.patch
-use_electron_resources_in_pdf_util.patch
 hack_plugin_response_interceptor_to_point_to_electron.patch
 delay_lock_the_protocol_scheme_registry.patch
 fix_route_mouse_event_navigations_through_the_web_contents_delegate.patch
@@ -137,4 +136,16 @@ backport_1122684.patch
 backport_1111737.patch
 cherry-pick-0e61c69ebd47.patch
 cherry-pick-814a27f8522b.patch
+cherry-pick-adc731d678c4.patch
 cherry-pick-52dceba66599.patch
+cherry-pick-abc6ab85e704.patch
+avoid_use-after-free.patch
+cherry-pick-f06a6cb3a38e.patch
+reland_add_more_checks_for_chrome_debugger_extensions.patch
+cherry-pick-8629cd7f8af3.patch
+fix_use_electron_generated_resources.patch
+cherry-pick-f440137cd96a.patch
+cherry-pick-30261f9de11e.patch
+cherry-pick-88f263f401b4.patch
+cherry-pick-229fdaf8fc05.patch
+cherry-pick-1ed869ad4bb3.patch
