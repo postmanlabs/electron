@@ -21,5 +21,8 @@
 
   "src/electron/patches/usrsctp": "src/third_party/usrsctp/usrsctplib",
 
-  "src/electron/patches/freetype": "src/third_party/freetype/src"
+  "src/electron/patches/freetype": "src/third_party/freetype/src",
+
+  "src/electron/patches/squirrel.mac": "src/third_party/squirrel.mac"
+  
 }
