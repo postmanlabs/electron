@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: twitharshil <harshil.jain@postman.com>
+Date: Tue, 24 Nov 2020 03:34:17 -0500
+Subject: big sur update issue patch
+
+
+diff --git a/Squirrel/ShipIt-main.m b/Squirrel/ShipIt-main.m
+index db246534e176f9c3ea2dd8b1c8659378fdc2435d..91ec4f5ea31dd1be70c941606f262b78d1d62769 100644
+--- a/Squirrel/ShipIt-main.m
++++ b/Squirrel/ShipIt-main.m
+@@ -8,10 +8,10 @@
+ 
+ #import <Foundation/Foundation.h>
+ 
+-#import <ReactiveObjC/EXTScope.h>
+-#import <ReactiveObjC/RACCommand.h>
+-#import <ReactiveObjC/RACSignal+Operations.h>
+-#import <ReactiveObjC/RACScheduler.h>
++#import "EXTScope.h"
++#import <ReactiveCocoa/RACCommand.h>
++#import <ReactiveCocoa/RACSignal+Operations.h>
++#import <ReactiveCocoa/RACScheduler.h>
+ 
+ #import "NSError+SQRLVerbosityExtensions.h"
+ #import "RACSignal+SQRLTransactionExtensions.h"
+@@ -197,4 +197,4 @@ int main(int argc, const char * argv[]) {
+ 	}
+ 
+ 	return EXIT_SUCCESS;
+-}
++}
+\ No newline at end of file
