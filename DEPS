@@ -17,6 +17,8 @@ vars = {
     'v12.14.1',
   'nan_version':
     '2ee313aaca52e2b478965ac50eb5082520380d1b',
+  'squirrel.mac_version':
+    'a3a5b3f03b824441c014893b18f99a103b2603e9',
 
   'boto_version': 'f7574aa6cc2c819430c1f05e9a1a1a666ef8169b',
   'pyyaml_version': '3.12',
@@ -28,6 +30,7 @@ vars = {
   'nodejs_git': 'https://github.com/nodejs',
   'requests_git': 'https://github.com/kennethreitz',
   'yaml_git': 'https://github.com/yaml',
+  'squirrel_git': 'https://github.com/Squirrel',
 
   # KEEP IN SYNC WITH utils.js FILE
   'yarn_version': '1.15.2',
@@ -48,6 +51,8 @@ vars = {
 
   # Python "requests" module is used for releases only.
   'checkout_requests': False,
+
+  'mac_xcode_version': 'default',
 
   # To allow running hooks without parsing the DEPS tree
   'process_deps': True,
@@ -99,6 +104,18 @@ deps = {
     'url': Var('requests_git') + '/requests.git' + '@' +  Var('requests_version'),
     'condition': 'checkout_requests and process_deps',
   },
+  'src/third_party/squirrel.mac': {
+    'url': Var("squirrel_git") + '/Squirrel.Mac.git@' + Var("squirrel.mac_version"),
+    'condition': 'process_deps',
+  },
+  'src/third_party/squirrel.mac/vendor/ReactiveObjC': {
+    'url': 'https://github.com/ReactiveCocoa/ReactiveObjC.git@74ab5baccc6f7202c8ac69a8d1e152c29dc1ea76',
+    'condition': 'process_deps'
+  },
+  'src/third_party/squirrel.mac/vendor/Mantle': {
+    'url': 'https://github.com/Mantle/Mantle.git@78d3966b3c331292ea29ec38661b25df0a245948',
+    'condition': 'process_deps',
+  }
 }
 
 hooks = [
@@ -154,6 +171,7 @@ hooks = [
 
 recursedeps = [
   'src',
+  'src/third_party/squirrel.mac',
 ]
 
 # Touch DEPS again to bust cache
