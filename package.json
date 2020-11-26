@@ -1,6 +1,6 @@
 {
   "name": "electron",
-  "version": "9.3.4-postman003",
+  "version": "9.3.4-postman004",
   "repository": "https://github.com/electron/electron",
   "description": "Build cross platform desktop apps with JavaScript, HTML, and CSS",
   "devDependencies": {
