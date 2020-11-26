@@ -506,7 +506,7 @@ source_set("electron_lib") {
     } else {
       libs += [
         "Squirrel.framework",
-        "ReactiveCocoa.framework",
+        "ReactiveObjC.framework",
         "Mantle.framework",
       ]
       cflags_objcc = [
@@ -514,7 +514,7 @@ source_set("electron_lib") {
         rebase_path("external_binaries", root_build_dir),
       ]
 
-      # ReactiveCocoa which is used by Squirrel requires using __weak.
+      # ReactiveObjC which is used by Squirrel requires using __weak.
       cflags_objcc += [ "-fobjc-weak" ]
     }
   }
@@ -898,7 +898,7 @@ if (is_mac) {
     if (!is_mas_build) {
       sources += [
         "external_binaries/Mantle.framework",
-        "external_binaries/ReactiveCocoa.framework",
+        "external_binaries/ReactiveObjC.framework",
         "external_binaries/Squirrel.framework",
       ]
     }
