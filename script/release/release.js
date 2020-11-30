@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 if (!process.env.CI) require('dotenv-safe').load();
-
+require('colors');
 const args = require('minimist')(process.argv.slice(2), {
   boolean: [
     'validateRelease',
@@ -9,7 +9,7 @@ const args = require('minimist')(process.argv.slice(2), {
     'automaticRelease',
     'verboseNugget'
   ],
-  default: { verboseNugget: false }
+  default: { 'verboseNugget': false }
 });
 const fs = require('fs');
 const { execSync } = require('child_process');
@@ -17,28 +17,26 @@ const nugget = require('nugget');
 const got = require('got');
 const pkg = require('../../package.json');
 const pkgVersion = `v${pkg.version}`;
+const pass = '\u2713'.green;
 const path = require('path');
+const fail = '\u2717'.red;
 const sumchecker = require('sumchecker');
 const temp = require('temp').track();
 const { URL } = require('url');
-const { Octokit } = require('@octokit/rest');
-
-require('colors');
-const pass = '✓'.green;
-const fail = '✗'.red;
 
 const { ELECTRON_DIR } = require('../lib/utils');
 
-const octokit = new Octokit({
+const octokit = require('@octokit/rest')({
   auth: process.env.ELECTRON_GITHUB_TOKEN
 });
 
+const owner = 'postmanlabs';
 const targetRepo = pkgVersion.indexOf('nightly') > 0 ? 'nightlies' : 'electron';
 let failureCount = 0;
 
 async function getDraftRelease (version, skipValidation) {
   const releaseInfo = await octokit.repos.listReleases({
-    owner: 'electron',
+    owner,
     repo: targetRepo
   });
 
@@ -54,8 +52,7 @@ async function getDraftRelease (version, skipValidation) {
     if (versionToCheck.indexOf('beta') > -1) {
       check(draft.prerelease, 'draft is a prerelease');
     }
-    check(draft.body.length > 50 && !draft.body.includes('(placeholder)'), 'draft has release notes');
-    check((failureCount === 0), 'Draft release looks good to go.', true);
+    check((failureCount === 0), `Draft release looks good to go.`, true);
   }
   return draft;
 }
@@ -69,7 +66,7 @@ async function validateReleaseAssets (release, validatingRelease) {
   requiredAssets.forEach(asset => {
     check(extantAssets.includes(asset), asset);
   });
-  check((failureCount === 0), 'All required GitHub assets exist for release', true);
+  check((failureCount === 0), `All required GitHub assets exist for release`, true);
 
   if (!validatingRelease || !release.draft) {
     if (release.draft) {
@@ -80,8 +77,8 @@ async function validateReleaseAssets (release, validatingRelease) {
           console.log(`${fail} error verifyingShasums`, err);
         });
     }
-    const s3Urls = s3UrlsForVersion(release.tag_name);
-    await verifyShasums(s3Urls, true);
+    // const s3Urls = s3UrlsForVersion(release.tag_name);
+    // await verifyShasums(s3Urls, true);
   }
 }
 
@@ -98,74 +95,23 @@ function check (condition, statement, exitIfFail = false) {
 function assetsForVersion (version, validatingRelease) {
   const patterns = [
     `chromedriver-${version}-darwin-x64.zip`,
-    `chromedriver-${version}-darwin-arm64.zip`,
-    `chromedriver-${version}-linux-arm64.zip`,
-    `chromedriver-${version}-linux-armv7l.zip`,
-    `chromedriver-${version}-linux-ia32.zip`,
     `chromedriver-${version}-linux-x64.zip`,
-    `chromedriver-${version}-mas-x64.zip`,
-    `chromedriver-${version}-mas-arm64.zip`,
     `chromedriver-${version}-win32-ia32.zip`,
     `chromedriver-${version}-win32-x64.zip`,
-    `chromedriver-${version}-win32-arm64.zip`,
-    `electron-${version}-darwin-x64-dsym.zip`,
-    `electron-${version}-darwin-x64-symbols.zip`,
     `electron-${version}-darwin-x64.zip`,
-    `electron-${version}-darwin-arm64-dsym.zip`,
-    `electron-${version}-darwin-arm64-symbols.zip`,
-    `electron-${version}-darwin-arm64.zip`,
-    `electron-${version}-linux-arm64-symbols.zip`,
-    `electron-${version}-linux-arm64.zip`,
-    `electron-${version}-linux-armv7l-symbols.zip`,
-    `electron-${version}-linux-armv7l.zip`,
-    `electron-${version}-linux-ia32-symbols.zip`,
-    `electron-${version}-linux-ia32.zip`,
-    `electron-${version}-linux-x64-debug.zip`,
-    `electron-${version}-linux-x64-symbols.zip`,
     `electron-${version}-linux-x64.zip`,
-    `electron-${version}-mas-x64-dsym.zip`,
-    `electron-${version}-mas-x64-symbols.zip`,
-    `electron-${version}-mas-x64.zip`,
-    `electron-${version}-mas-arm64-dsym.zip`,
-    `electron-${version}-mas-arm64-symbols.zip`,
-    `electron-${version}-mas-arm64.zip`,
-    `electron-${version}-win32-ia32-pdb.zip`,
-    `electron-${version}-win32-ia32-symbols.zip`,
     `electron-${version}-win32-ia32.zip`,
-    `electron-${version}-win32-x64-pdb.zip`,
-    `electron-${version}-win32-x64-symbols.zip`,
     `electron-${version}-win32-x64.zip`,
-    `electron-${version}-win32-arm64-pdb.zip`,
-    `electron-${version}-win32-arm64-symbols.zip`,
-    `electron-${version}-win32-arm64.zip`,
-    'electron-api.json',
-    'electron.d.ts',
-    'hunspell_dictionaries.zip',
+    `electron-api.json`,
+    `electron.d.ts`,
     `ffmpeg-${version}-darwin-x64.zip`,
-    `ffmpeg-${version}-darwin-arm64.zip`,
-    `ffmpeg-${version}-linux-arm64.zip`,
-    `ffmpeg-${version}-linux-armv7l.zip`,
-    `ffmpeg-${version}-linux-ia32.zip`,
     `ffmpeg-${version}-linux-x64.zip`,
-    `ffmpeg-${version}-mas-x64.zip`,
-    `ffmpeg-${version}-mas-arm64.zip`,
     `ffmpeg-${version}-win32-ia32.zip`,
     `ffmpeg-${version}-win32-x64.zip`,
-    `ffmpeg-${version}-win32-arm64.zip`,
     `mksnapshot-${version}-darwin-x64.zip`,
-    `mksnapshot-${version}-darwin-arm64.zip`,
-    `mksnapshot-${version}-linux-arm64-x64.zip`,
-    `mksnapshot-${version}-linux-armv7l-x64.zip`,
-    `mksnapshot-${version}-linux-ia32.zip`,
     `mksnapshot-${version}-linux-x64.zip`,
-    `mksnapshot-${version}-mas-x64.zip`,
-    `mksnapshot-${version}-mas-arm64.zip`,
     `mksnapshot-${version}-win32-ia32.zip`,
-    `mksnapshot-${version}-win32-x64.zip`,
-    `mksnapshot-${version}-win32-arm64-x64.zip`,
-    `electron-${version}-win32-ia32-toolchain-profile.zip`,
-    `electron-${version}-win32-x64-toolchain-profile.zip`,
-    `electron-${version}-win32-arm64-toolchain-profile.zip`
+    `mksnapshot-${version}-win32-x64.zip`
   ];
   if (!validatingRelease) {
     patterns.push('SHASUMS256.txt');
@@ -174,7 +120,7 @@ function assetsForVersion (version, validatingRelease) {
 }
 
 function s3UrlsForVersion (version) {
-  const bucket = 'https://gh-contractor-zcbenz.s3.amazonaws.com/';
+  const bucket = `https://gh-contractor-zcbenz.s3.amazonaws.com/`;
   const patterns = [
     `${bucket}atom-shell/dist/${version}/iojs-${version}-headers.tar.gz`,
     `${bucket}atom-shell/dist/${version}/iojs-${version}.tar.gz`,
@@ -224,35 +170,32 @@ async function createReleaseShasums (release) {
   if (existingAssets.length > 0) {
     console.log(`${fileName} already exists on GitHub; deleting before creating new file.`);
     await octokit.repos.deleteReleaseAsset({
-      owner: 'electron',
+      owner,
       repo: targetRepo,
       asset_id: existingAssets[0].id
     }).catch(err => {
       console.log(`${fail} Error deleting ${fileName} on GitHub:`, err);
     });
   }
-  console.log(`Creating and uploading the release ${fileName}.`);
-  const scriptPath = path.join(ELECTRON_DIR, 'script', 'release', 'merge-electron-checksums.py');
-  const checksums = runScript(scriptPath, ['-v', pkgVersion]);
 
+  const scriptPath = path.join(__dirname, 'merge-electron-checksums_local.js');
+  const checksums = runScript(scriptPath, []);
   console.log(`${pass} Generated release SHASUMS.`);
   const filePath = await saveShaSumFile(checksums, fileName);
-
   console.log(`${pass} Created ${fileName} file.`);
   await uploadShasumFile(filePath, fileName, release.id);
-
   console.log(`${pass} Successfully uploaded ${fileName} to GitHub.`);
 }
 
 async function uploadShasumFile (filePath, fileName, releaseId) {
-  const uploadUrl = `https://uploads.github.com/repos/electron/${targetRepo}/releases/${releaseId}/assets{?name,label}`;
+  const uploadUrl = `https://uploads.github.com/repos/postmanlabs/${targetRepo}/releases/${releaseId}/assets{?name,label}`;
   return octokit.repos.uploadReleaseAsset({
     url: uploadUrl,
     headers: {
       'content-type': 'text/plain',
       'content-length': fs.statSync(filePath).size
     },
-    data: fs.createReadStream(filePath),
+    file: fs.createReadStream(filePath),
     name: fileName
   }).catch(err => {
     console.log(`${fail} Error uploading ${filePath} to GitHub:`, err);
@@ -282,7 +225,7 @@ function saveShaSumFile (checksums, fileName) {
 
 async function publishRelease (release) {
   return octokit.repos.updateRelease({
-    owner: 'electron',
+    owner,
     repo: targetRepo,
     release_id: release.id,
     tag_name: release.tag_name,
@@ -305,9 +248,6 @@ async function makeRelease (releaseToValidate) {
     await validateReleaseAssets(release, true);
   } else {
     let draftRelease = await getDraftRelease();
-    uploadNodeShasums();
-    uploadIndexJson();
-
     await createReleaseShasums(draftRelease);
 
     // Fetch latest version of release before verifying
@@ -315,7 +255,7 @@ async function makeRelease (releaseToValidate) {
     await validateReleaseAssets(draftRelease);
     await publishRelease(draftRelease);
     console.log(`${pass} SUCCESS!!! Release has been published. Please run ` +
-      '"npm run publish-to-npm" to publish release to npm.');
+    `"npm run publish-to-npm" to publish release to npm.`);
   }
 }
 
@@ -334,12 +274,12 @@ async function makeTempDir () {
 async function verifyAssets (release) {
   const downloadDir = await makeTempDir();
 
-  console.log('Downloading files from GitHub to verify shasums');
+  console.log(`Downloading files from GitHub to verify shasums`);
   const shaSumFile = 'SHASUMS256.txt';
 
   let filesToCheck = await Promise.all(release.assets.map(async asset => {
     const requestOptions = await octokit.repos.getReleaseAsset.endpoint({
-      owner: 'electron',
+      owner,
       repo: targetRepo,
       asset_id: asset.id,
       headers: {
