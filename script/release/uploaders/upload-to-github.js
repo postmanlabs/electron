@@ -2,10 +2,12 @@ if (!process.env.CI) require('dotenv-safe').load();
 
 const fs = require('fs');
 
-const { Octokit } = require('@octokit/rest');
-const octokit = new Octokit({
+const octokit = require('@octokit/rest')({
   auth: process.env.ELECTRON_GITHUB_TOKEN
 });
+
+const owner = 'postmanlabs';
+const repo = 'electron';
 
 if (process.argv.length < 6) {
   console.log('Usage: upload-to-github filePath fileName releaseId');
@@ -21,10 +23,10 @@ const getHeaders = (filePath, fileName) => {
   const extension = fileName.split('.').pop();
   const size = fs.statSync(filePath).size;
   const options = {
-    json: 'text/json',
-    zip: 'application/zip',
-    txt: 'text/plain',
-    ts: 'application/typescript'
+    'json': 'text/json',
+    'zip': 'application/zip',
+    'txt': 'text/plain',
+    'ts': 'application/typescript'
   };
 
   return {
@@ -34,14 +36,14 @@ const getHeaders = (filePath, fileName) => {
 };
 
 const targetRepo = releaseVersion.indexOf('nightly') > 0 ? 'nightlies' : 'electron';
-const uploadUrl = `https://uploads.github.com/repos/electron/${targetRepo}/releases/${releaseId}/assets{?name,label}`;
+const uploadUrl = `https://uploads.github.com/repos/postmanlabs/${targetRepo}/releases/${releaseId}/assets{?name,label}`;
 let retry = 0;
 
 function uploadToGitHub () {
   octokit.repos.uploadReleaseAsset({
     url: uploadUrl,
     headers: getHeaders(filePath, fileName),
-    data: fs.createReadStream(filePath),
+    file: fs.createReadStream(filePath),
     name: fileName
   }).then(() => {
     console.log(`Successfully uploaded ${fileName} to GitHub.`);
@@ -51,8 +53,8 @@ function uploadToGitHub () {
       console.log(`Error uploading ${fileName} to GitHub, will retry.  Error was:`, err);
       retry++;
 
-      octokit.repos.listReleaseAssets({
-        owner: 'electron',
+      octokit.repos.listAssetsForRelease({
+        owner,
         repo: targetRepo,
         release_id: releaseId,
         per_page: 100
@@ -64,7 +66,7 @@ function uploadToGitHub () {
         if (existingAssets.length > 0) {
           console.log(`${fileName} already exists; will delete before retrying upload.`);
           octokit.repos.deleteReleaseAsset({
-            owner: 'electron',
+            owner,
             repo: targetRepo,
             asset_id: existingAssets[0].id
           }).catch((deleteErr) => {
@@ -75,7 +77,7 @@ function uploadToGitHub () {
           uploadToGitHub();
         }
       }).catch((getReleaseErr) => {
-        console.log('Fatal: Unable to get current release assets via getRelease!  Error was:', getReleaseErr);
+        console.log(`Fatal: Unable to get current release assets via getRelease!  Error was:`, getReleaseErr);
       });
     } else {
       console.log(`Error retrying uploading ${fileName} to GitHub:`, err);
