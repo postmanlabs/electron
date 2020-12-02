@@ -18,7 +18,7 @@ steps:
       - ".buildkite/nix/build-and-upload-release.sh linux"
     agents:
       os: "linux"
-      queue: "electron-build-v11"
+      queue: "electron-release-v11"
   - label: ":mac: :electron: Package"
     command:
       - ".buildkite/nix/build-and-upload-release.sh darwin"

@@ -38,7 +38,7 @@ const jsonFields = [
   'keywords'
 ];
 
-const npmTag = 'dev';
+const npmTag = '';
 
 new Promise((resolve, reject) => {
   console.log('cleaning temporary directory');
