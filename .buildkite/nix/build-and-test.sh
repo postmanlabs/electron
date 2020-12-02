@@ -62,14 +62,17 @@ buildAndUpload() {
   
   export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
   export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
-  export SCCACHE_BUCKET="electronjs-sccache-ci"
-  export SCCACHE_TWO_TIER=true
 
   echo "--- Running cleanup old files"
   rm -rf out
 
   echo "--- Running gn checks"
-  gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
+  if [[ "$platform" == "linux" ]]
+  then
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
+  else 
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
+  fi
   
   gn check out/Release //electron:electron_lib
   gn check out/Release //electron:electron_app

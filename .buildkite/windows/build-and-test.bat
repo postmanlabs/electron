@@ -49,14 +49,14 @@ CALL gn check out/Release-x32 //electron:electron_lib || EXIT /b !errorlevel!
 CALL gn check out/Release-x32 //electron:electron_app || EXIT /b !errorlevel!
 CALL gn check out/Release-x32 //electron:manifests || EXIT /b !errorlevel!
 CALL gn check out/Release-x32 //electron/shell/common/api:mojo || EXIT /b !errorlevel!
-CALL ninja -C out/Release-x32 electron:electron_app -j 75 || EXIT /b !errorlevel!
+CALL ninja -C out/Release-x32 electron:electron_app -j 40 || EXIT /b !errorlevel!
 CALL gn gen out/ffmpeg-x32 --args="import(\"//electron/build/args/ffmpeg.gn\") target_cpu=\"x86\"" || EXIT /b !errorlevel!
 
 ECHO "--- Zipping the artifacts for 32 bit"
-CALL ninja -C out/ffmpeg-x32 electron:electron_ffmpeg_zip -j 75 || EXIT /b !errorlevel!
-CALL ninja -C out/Release-x32 electron:electron_dist_zip -j 75 || EXIT /b !errorlevel!
-CALL ninja -C out/Release-x32 electron:electron_mksnapshot_zip -j 75 || EXIT /b !errorlevel!
-CALL ninja -C out/Release-x32 electron:electron_chromedriver_zip -j 75 || EXIT /b !errorlevel!
+CALL ninja -C out/ffmpeg-x32 electron:electron_ffmpeg_zip -j 40 || EXIT /b !errorlevel!
+CALL ninja -C out/Release-x32 electron:electron_dist_zip -j 40 || EXIT /b !errorlevel!
+CALL ninja -C out/Release-x32 electron:electron_mksnapshot_zip -j 40 || EXIT /b !errorlevel!
+CALL ninja -C out/Release-x32 electron:electron_chromedriver_zip -j 40 || EXIT /b !errorlevel!
 
 ECHO "--- Switch directory <pipeline>/src/out"
 CALL cd /D out || EXIT /b !errorlevel!
@@ -76,14 +76,14 @@ CALL gn check out/Release //electron:electron_lib || EXIT /b !errorlevel!
 CALL gn check out/Release //electron:electron_app || EXIT /b !errorlevel!
 CALL gn check out/Release //electron:manifests || EXIT /b !errorlevel!
 CALL gn check out/Release //electron/shell/common/api:mojo || EXIT /b !errorlevel!
-CALL ninja -C out/Release electron:electron_app -j 75 || EXIT /b !errorlevel!
+CALL ninja -C out/Release electron:electron_app -j 40 || EXIT /b !errorlevel!
 CALL gn gen out/ffmpeg "--args=import(\"//electron/build/args/ffmpeg.gn\")" || EXIT /b !errorlevel!
 
 ECHO "--- Zipping the artifacts for 64 bit"
-CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip -j 75 || EXIT /b !errorlevel!
-CALL ninja -C out/Release electron:electron_dist_zip -j 75 || EXIT /b !errorlevel!
-CALL ninja -C out/Release electron:electron_mksnapshot_zip -j 75 || EXIT /b !errorlevel!
-CALL ninja -C out/Release electron:electron_chromedriver_zip -j 75 || EXIT /b !errorlevel!
+CALL ninja -C out/ffmpeg electron:electron_ffmpeg_zip -j 40 || EXIT /b !errorlevel!
+CALL ninja -C out/Release electron:electron_dist_zip -j 40 || EXIT /b !errorlevel!
+CALL ninja -C out/Release electron:electron_mksnapshot_zip -j 40 || EXIT /b !errorlevel!
+CALL ninja -C out/Release electron:electron_chromedriver_zip -j 40 || EXIT /b !errorlevel!
 
 ECHO "--- Switch directory <pipeline>/src/out"
 CALL cd /D out || EXIT /b !errorlevel!
