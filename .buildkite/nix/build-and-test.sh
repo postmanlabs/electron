@@ -62,8 +62,6 @@ buildAndUpload() {
   
   export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
   export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
-  export SCCACHE_BUCKET="electronjs-sccache-ci"
-  export SCCACHE_TWO_TIER=true
 
   echo "--- Running cleanup old files"
   rm -rf out
