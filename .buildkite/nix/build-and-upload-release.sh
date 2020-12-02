@@ -70,7 +70,7 @@ buildAndUpload() {
   rm -rf out
 
   echo "--- Running gn checks"
-  gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
+  gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
 
   gn check out/Release //electron:electron_lib
   gn check out/Release //electron:electron_app
