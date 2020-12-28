@@ -20,7 +20,7 @@ sys.path.append(
 from io import StringIO
 from zipfile import ZipFile
 from lib.config import PLATFORM, get_target_arch,  get_env_var, s3_config, \
-                       get_zip_name
+                       get_zip_name, enable_verbose_mode, get_platform_key
 from lib.util import get_electron_branding, execute, get_electron_version, \
                      scoped_cwd, s3put, get_electron_exec, \
                      get_out_dir, SRC_DIR, ELECTRON_DIR
@@ -42,9 +42,6 @@ def main():
     DIST_NAME = get_zip_name(PROJECT_NAME, POSTMAN_ELECTRON_VERSION,'',args.arch_ia32)
   else: 
     DIST_NAME = get_zip_name(PROJECT_NAME, POSTMAN_ELECTRON_VERSION)
-
-  
-
   
   if  args.upload_to_s3:
     utcnow = datetime.datetime.utcnow()

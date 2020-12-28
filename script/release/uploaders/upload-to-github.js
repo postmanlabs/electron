@@ -53,7 +53,7 @@ function uploadToGitHub () {
       console.log(`Error uploading ${fileName} to GitHub, will retry.  Error was:`, err);
       retry++;
 
-      octokit.repos.listAssetsForRelease({
+      octokit.repos.listReleaseAssets({
         owner,
         repo: targetRepo,
         release_id: releaseId,

@@ -1,11 +1,12 @@
 {
   "name": "electron",
-  "version": "9.3.4-postman001",
+  "version": "9.4.0-postman001",
   "repository": "https://github.com/electron/electron",
   "description": "Build cross platform desktop apps with JavaScript, HTML, and CSS",
   "devDependencies": {
     "@electron/docs-parser": "^0.4.2",
     "@electron/typescript-definitions": "^8.6.4",
+    "@octokit/auth-app": "^2.10.0",
     "@octokit/rest": "^16.3.2",
     "@primer/octicons": "^9.1.1",
     "@types/basic-auth": "^1.1.2",

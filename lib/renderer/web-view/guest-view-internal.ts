@@ -27,6 +27,7 @@ const WEB_VIEW_EVENTS: Record<string, Array<string>> = {
   'focus-change': ['focus', 'guestInstanceId'],
   'close': [],
   'crashed': [],
+  'render-process-gone': ['details'],
   'plugin-crashed': ['name', 'version'],
   'destroyed': [],
   'page-title-updated': ['title', 'explicitSet'],
@@ -66,18 +67,18 @@ const dispatchEvent = function (
 };
 
 export function registerEvents (webView: WebViewImpl, viewInstanceId: number) {
-  ipcRendererInternal.on(`ELECTRON_GUEST_VIEW_INTERNAL_DESTROY_GUEST-${viewInstanceId}`, function () {
+  ipcRendererInternal.onMessageFromMain(`ELECTRON_GUEST_VIEW_INTERNAL_DESTROY_GUEST-${viewInstanceId}`, function () {
     webView.guestInstanceId = undefined;
     webView.reset();
     const domEvent = new Event('destroyed');
     webView.dispatchEvent(domEvent);
   });
 
-  ipcRendererInternal.on(`ELECTRON_GUEST_VIEW_INTERNAL_DISPATCH_EVENT-${viewInstanceId}`, function (event, eventName, ...args) {
+  ipcRendererInternal.onMessageFromMain(`ELECTRON_GUEST_VIEW_INTERNAL_DISPATCH_EVENT-${viewInstanceId}`, function (event, eventName, ...args) {
     dispatchEvent(webView, eventName, eventName, ...args);
   });
 
-  ipcRendererInternal.on(`ELECTRON_GUEST_VIEW_INTERNAL_IPC_MESSAGE-${viewInstanceId}`, function (event, channel, ...args) {
+  ipcRendererInternal.onMessageFromMain(`ELECTRON_GUEST_VIEW_INTERNAL_IPC_MESSAGE-${viewInstanceId}`, function (event, channel, ...args) {
     const domEvent = new Event('ipc-message') as IpcMessageEvent;
     domEvent.channel = channel;
     domEvent.args = args;
