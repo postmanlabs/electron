@@ -34,6 +34,10 @@ upload_SHA_file_and_release() {
 
   echo "Releasing"
   node script/release/release.js --skipVersionCheck
+
+  echo "Removed unsaved changes"
+  git stash save --keep-index --include-untracked
+  git stash drop
 }
 
 main() {
