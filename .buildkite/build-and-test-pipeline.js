@@ -31,16 +31,16 @@ function buildStepForNix (platform) {
     command: [`.buildkite/nix/build-and-test.sh ${platform}`],
     agents: [
       `os=${platform}`,
-      'queue=electron-build-v11'
+      'queue=electron-test-v11'
     ]
   };
 }
 
 function generateBuildPipeline () {
   return [
-    buildStepForWindows(),
+    // buildStepForWindows(),
     buildStepForNix('linux'),
-    buildStepForNix('darwin'),
+    // buildStepForNix('darwin'),
   ];
 }
 
