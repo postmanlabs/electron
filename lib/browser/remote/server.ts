@@ -19,7 +19,7 @@ const FUNCTION_PROPERTIES = [
 ];
 
 type RendererFunctionId = [string, number] // [contextId, funcId]
-type FinalizerInfo = { id: RendererFunctionId, webContents: electron.WebContents, frameId: number };
+type FinalizerInfo = { id: RendererFunctionId, webContents: electron.WebContents, frameId: [number, number] };
 type WeakRef<T> = { deref(): T | undefined }
 type CallIntoRenderer = (...args: any[]) => void
 
@@ -31,7 +31,7 @@ const finalizationRegistry = new (globalThis as any).FinalizationRegistry((fi: F
   const ref = rendererFunctionCache.get(mapKey);
   if (ref !== undefined && ref.deref() === undefined) {
     rendererFunctionCache.delete(mapKey);
-    if (!fi.webContents.isDestroyed()) { fi.webContents.sendToFrame(fi.frameId, 'ELECTRON_RENDERER_RELEASE_CALLBACK', fi.id[0], fi.id[1]); }
+    if (!fi.webContents.isDestroyed()) { fi.webContents._sendToFrameInternal(fi.frameId, 'ELECTRON_RENDERER_RELEASE_CALLBACK', fi.id[0], fi.id[1]); }
   }
 });
 
@@ -43,7 +43,7 @@ function getCachedRendererFunction (id: RendererFunctionId): CallIntoRenderer | 
     if (deref !== undefined) return deref;
   }
 }
-function setCachedRendererFunction (id: RendererFunctionId, wc: electron.WebContents, frameId: number, value: CallIntoRenderer) {
+function setCachedRendererFunction (id: RendererFunctionId, wc: electron.WebContents, frameId: [number, number], value: CallIntoRenderer) {
   // eslint-disable-next-line no-undef
   const wr = new (globalThis as any).WeakRef(value) as WeakRef<CallIntoRenderer>;
   const mapKey = id[0] + '~' + id[1];
@@ -218,7 +218,7 @@ const fakeConstructor = (constructor: Function, name: string) =>
   });
 
 // Convert array of meta data from renderer into array of real values.
-const unwrapArgs = function (sender: electron.WebContents, frameId: number, contextId: string, args: any[]) {
+const unwrapArgs = function (sender: electron.WebContents, frameId: [number, number], contextId: string, args: any[]) {
   const metaToValue = function (meta: MetaTypeFromRenderer): any {
     switch (meta.type) {
       case 'nativeimage':
@@ -263,7 +263,7 @@ const unwrapArgs = function (sender: electron.WebContents, frameId: number, cont
         const callIntoRenderer = function (this: any, ...args: any[]) {
           let succeed = false;
           if (!sender.isDestroyed()) {
-            succeed = (sender as any)._sendToFrameInternal(frameId, 'ELECTRON_RENDERER_CALLBACK', contextId, meta.id, valueToMeta(sender, contextId, args));
+            succeed = sender._sendToFrameInternal(frameId, 'ELECTRON_RENDERER_CALLBACK', contextId, meta.id, valueToMeta(sender, contextId, args));
           }
           if (!succeed) {
             removeRemoteListenersAndLogWarning(this, callIntoRenderer);
@@ -421,7 +421,7 @@ handleRemoteCommand('ELECTRON_BROWSER_CURRENT_WEB_CONTENTS', function (event, co
 });
 
 handleRemoteCommand('ELECTRON_BROWSER_CONSTRUCTOR', function (event, contextId, id, args) {
-  args = unwrapArgs(event.sender, event.frameId, contextId, args);
+  args = unwrapArgs(event.sender, [event.processId, event.frameId], contextId, args);
   const constructor = objectsRegistry.get(id);
 
   if (constructor == null) {
@@ -432,7 +432,7 @@ handleRemoteCommand('ELECTRON_BROWSER_CONSTRUCTOR', function (event, contextId, 
 });
 
 handleRemoteCommand('ELECTRON_BROWSER_FUNCTION_CALL', function (event, contextId, id, args) {
-  args = unwrapArgs(event.sender, event.frameId, contextId, args);
+  args = unwrapArgs(event.sender, [event.processId, event.frameId], contextId, args);
   const func = objectsRegistry.get(id);
 
   if (func == null) {
@@ -449,7 +449,7 @@ handleRemoteCommand('ELECTRON_BROWSER_FUNCTION_CALL', function (event, contextId
 });
 
 handleRemoteCommand('ELECTRON_BROWSER_MEMBER_CONSTRUCTOR', function (event, contextId, id, method, args) {
-  args = unwrapArgs(event.sender, event.frameId, contextId, args);
+  args = unwrapArgs(event.sender, [event.processId, event.frameId], contextId, args);
   const object = objectsRegistry.get(id);
 
   if (object == null) {
@@ -460,7 +460,7 @@ handleRemoteCommand('ELECTRON_BROWSER_MEMBER_CONSTRUCTOR', function (event, cont
 });
 
 handleRemoteCommand('ELECTRON_BROWSER_MEMBER_CALL', function (event, contextId, id, method, args) {
-  args = unwrapArgs(event.sender, event.frameId, contextId, args);
+  args = unwrapArgs(event.sender, [event.processId, event.frameId], contextId, args);
   const object = objectsRegistry.get(id);
 
   if (object == null) {
@@ -477,7 +477,7 @@ handleRemoteCommand('ELECTRON_BROWSER_MEMBER_CALL', function (event, contextId, 
 });
 
 handleRemoteCommand('ELECTRON_BROWSER_MEMBER_SET', function (event, contextId, id, name, args) {
-  args = unwrapArgs(event.sender, event.frameId, contextId, args);
+  args = unwrapArgs(event.sender, [event.processId, event.frameId], contextId, args);
   const obj = objectsRegistry.get(id);
 
   if (obj == null) {
