@@ -15,16 +15,22 @@ steps:
 
   - label: ":linux: :electron: Package"
     command:
-      - ".buildkite/nix/build-and-upload-release.sh linux"
+      - ".buildkite/nix/build-and-upload-release.sh linux x64"
     agents:
       os: "linux"
       queue: "electron-release-v11"
-  - label: ":mac: :electron: Package"
+  - label: ":mac: :electron: Package x64"
     command:
-      - ".buildkite/nix/build-and-upload-release.sh darwin"
+      - ".buildkite/nix/build-and-upload-release.sh darwin x64"
     agents:
       os: "darwin"
       queue: "electron-build-v11"
+  - label: ":mac: :electron: Package arm64"
+    command:
+      - ".buildkite/nix/build-and-upload-release.sh darwin arm64"
+    agents:
+      os: "darwin"
+      queue: "electron-arm-v11"
 
   - wait
   

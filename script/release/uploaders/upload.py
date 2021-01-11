@@ -40,6 +40,8 @@ def main():
 
   if args.arch_ia32:
     DIST_NAME = get_zip_name(PROJECT_NAME, POSTMAN_ELECTRON_VERSION,'',args.arch_ia32)
+  elif args.arch_arm64:
+    DIST_NAME = get_zip_name(PROJECT_NAME, POSTMAN_ELECTRON_VERSION,'','',args.arch_arm64) 
   else: 
     DIST_NAME = get_zip_name(PROJECT_NAME, POSTMAN_ELECTRON_VERSION)
 
@@ -86,6 +88,10 @@ def main():
     ffmpeg = get_zip_name('ffmpeg', POSTMAN_ELECTRON_VERSION,'',args.arch_ia32)
     chromedriver = get_zip_name('chromedriver', POSTMAN_ELECTRON_VERSION,'',args.arch_ia32)
     mksnapshot = get_zip_name('mksnapshot', POSTMAN_ELECTRON_VERSION,'',args.arch_ia32)
+  elif args.arch_arm64: 
+    ffmpeg = get_zip_name('ffmpeg', POSTMAN_ELECTRON_VERSION,'','',args.arch_arm64)
+    chromedriver = get_zip_name('chromedriver', POSTMAN_ELECTRON_VERSION,'', '',args.arch_arm64)
+    mksnapshot = get_zip_name('mksnapshot', POSTMAN_ELECTRON_VERSION,'', '',args.arch_arm64)
   else: 
     ffmpeg = get_zip_name('ffmpeg', POSTMAN_ELECTRON_VERSION)
     chromedriver = get_zip_name('chromedriver', POSTMAN_ELECTRON_VERSION)
@@ -125,7 +131,10 @@ def parse_args():
                       required=False)
   parser.add_argument('-a', '--arch_ia32',
                       help='architecture for windows ia32',
-                      action='store_true')                  
+                      action='store_true')
+  parser.add_argument('-arm', '--arch_arm64',
+                      help='architecture for mac arm64',
+                      action='store_true')                 
   return parser.parse_args()
 
 

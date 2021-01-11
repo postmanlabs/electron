@@ -8,6 +8,7 @@ trap cleanup EXIT
 
 # platform should be one of "linux" or "darwin"
 declare platform="$1"
+declare arch="$2"
 
 cleanup() {
   echo "running cleanup"
@@ -28,8 +29,7 @@ sanity() {
 }
 
 buildAndUpload() {
-  echo "Building for $platform x64"
-  pwd
+  echo "--- Building for $platform and $arch"
   echo "--- Swtiching directory <pipeline>/src/electron"
   cd src/electron
 
@@ -51,7 +51,7 @@ buildAndUpload() {
   git checkout $BUILDKITE_BRANCH
   git branch --set-upstream-to origin/$BUILDKITE_BRANCH
 
-  echo "git reset --hard origin"
+  echo "--- git reset --hard origin"
   git reset --hard origin/$BUILDKITE_BRANCH
   
   echo "--- Running gclient sync step"
@@ -66,93 +66,121 @@ buildAndUpload() {
   echo "--- Running cleanup old files"
   rm -rf out
 
-  echo "--- Running gn checks"
-  if [[ "$platform" == "linux" ]]
-  then
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
-  else 
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
-  fi
-  
-  gn check out/Release //electron:electron_lib
-  gn check out/Release //electron:electron_app
-  gn check out/Release //electron:manifests
-  gn check out/Release //electron/shell/common/api:mojo
+  if [ "$platform" = "darwin" ] && [ "$arch" = "arm64" ]; then
+    echo "--- Running for $platform && $arch"
+    echo "--- Running gn checks"
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") target_cpu = "arm64""
+    gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\") target_cpu = "arm64""
 
-  echo "--- Electron build"
-  if [[ "$platform" == "linux" ]]
-  then
+    gn check out/Release //electron:electron_lib
+    gn check out/Release //electron:electron_app
+    gn check out/Release //electron:manifests
+    gn check out/Release //electron/shell/common/api:mojo
+    
+    echo "--- Electron build"
     ninja -C out/Release electron -j 25
-  else 
-    ninja -C out/Release electron -j 10
-  fi
-
-  if [[ "$platform" == "linux" ]]
-    echo "--- Strip Electron binaries (Linux)"
-  then
-    electron/script/copy-debug-symbols.py --target-cpu="x64" --out-dir=out/Release/debug --compress
-    electron/script/strip-binaries.py -d out/Release
-    electron/script/add-debug-link.py --target-cpu="x64" --debug-dir=out/Release/debug
-  fi
-
-  echo "--- Build Electron distributed binary"
-  ninja -C out/Release electron:electron_dist_zip
-
-  if [[ "$platform" == "linux" ]]
-  then
-    target_os=linux
-  else
-    target_os=mac
-  fi
-
-  echo "--- Build chromedriver"
-  if [[ "$platform" == "linux" ]]
-  then
+    ninja -C out/Release electron:electron_dist_zip
     ninja -C out/Release chrome/test/chromedriver -j 75
+    ninja -C out/Release electron:electron_chromedriver_zip
+    ninja -C out/ffmpeg electron:electron_ffmpeg_zip
+    ninja -C out/Release electron:electron_mksnapshot 
+    ninja -C out/Release electron:electron_mksnapshot_zip 
+
+    echo "--- Upload artifacts"
+    cd out
+    buildkite-agent artifact upload Release/dist.zip 
+    buildkite-agent artifact upload Release/chromedriver.zip 
+    buildkite-agent artifact upload ffmpeg/ffmpeg.zip 
+    buildkite-agent artifact upload Release/mksnapshot.zip 
+    cd ..
+
   else 
-    ninja -C out/Release chrome/test/chromedriver -j 5
-  fi
-  
-  [[ "$platform" == "linux" ]] && electron/script/strip-binaries.py --target-cpu="x64" --file $PWD/out/Release/chromedriver
-  ninja -C out/Release electron:electron_chromedriver_zip 
 
-  echo "--- Build ffmpeg"
-  gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\")"
-  ninja -C out/ffmpeg electron:electron_ffmpeg_zip 
-  
+    echo "--- Running for $platform && $arch"
+    echo "--- Running gn checks"
 
-  echo "--- Build mksnapshot"
-  ninja -C out/Release electron:electron_mksnapshot 
+    if [ "$platform" = "linux" ]
+    then
+      gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
+    else
+      gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
+    fi
+    
+    gn check out/Release //electron:electron_lib
+    gn check out/Release //electron:electron_app
+    gn check out/Release //electron:manifests
+    gn check out/Release //electron/shell/common/api:mojo
 
-  if [[ "$platform" == "linux" ]]
-  then
-    electron/script/strip-binaries.py --file $PWD/out/Release/mksnapshot
-    electron/script/strip-binaries.py --file $PWD/out/Release/v8_context_snapshot_generator
-  fi
+    echo "--- Electron build"
 
-  ninja -C out/Release electron:electron_mksnapshot_zip 
-  
-  if [[ "$platform" == "linux" ]]
-  echo "--- Generate type declaration files [Linux]"
-  then
-    cd electron
-    node script/yarn create-typescript-definitions
-    cd ../
-  fi
+    if [ "$platform" = "linux" ]
+    then
+      ninja -C out/Release electron -j 25
+    else
+      ninja -C out/Release electron -j 10
+    fi
 
-  echo "--- Upload artifacts"
-  cd out
-  buildkite-agent artifact upload Release/dist.zip 
-  buildkite-agent artifact upload Release/chromedriver.zip 
-  buildkite-agent artifact upload ffmpeg/ffmpeg.zip 
-  buildkite-agent artifact upload Release/mksnapshot.zip 
+    if [ "$platform" = "linux" ]; then
+      echo "--- Strip Electron binaries (Linux)"
+      electron/script/copy-debug-symbols.py --target-cpu="x64" --out-dir=out/Release/debug --compress
+      electron/script/strip-binaries.py -d out/Release
+      electron/script/add-debug-link.py --target-cpu="x64" --debug-dir=out/Release/debug
+    fi
 
-  cd ..
+    echo "--- Build Electron distributed binary"
+    ninja -C out/Release electron:electron_dist_zip
 
-  if [[ "$platform" == "linux" ]]
-  then
-    buildkite-agent artifact upload electron/electron-api.json 
-    buildkite-agent artifact upload electron/electron.d.ts
+    if [ "$platform" = "linux" ]; then
+      target_os=linux
+    else
+      target_os=mac
+    fi
+
+    echo "--- Build chromedriver"
+    if [ "$platform" = "linux" ]; then
+      ninja -C out/Release chrome/test/chromedriver -j 75
+    else
+      ninja -C out/Release chrome/test/chromedriver -j 5
+    fi
+    
+    [ "$platform" = "linux" ] && electron/script/strip-binaries.py --target-cpu="x64" --file $PWD/out/Release/chromedriver
+    ninja -C out/Release electron:electron_chromedriver_zip
+
+    echo "--- Build ffmpeg"
+    gn gen out/ffmpeg --args="import(\"//electron/build/args/ffmpeg.gn\")"
+    ninja -C out/ffmpeg electron:electron_ffmpeg_zip
+    
+
+    echo "--- Build mksnapshot"
+    ninja -C out/Release electron:electron_mksnapshot
+
+    if [ "$platform" = "linux" ]; then
+      electron/script/strip-binaries.py --file $PWD/out/Release/mksnapshot
+      electron/script/strip-binaries.py --file $PWD/out/Release/v8_context_snapshot_generator
+    fi
+
+    ninja -C out/Release electron:electron_mksnapshot_zip
+    
+    if [ "$platform" = "linux" ]; then
+      echo "--- Generate type declaration files [Linux]"
+      cd electron
+      node script/yarn create-typescript-definitions
+      cd ../
+    fi
+
+    echo "--- Upload artifacts"
+    cd out
+    buildkite-agent artifact upload Release/dist.zip
+    buildkite-agent artifact upload Release/chromedriver.zip
+    buildkite-agent artifact upload ffmpeg/ffmpeg.zip
+    buildkite-agent artifact upload Release/mksnapshot.zip
+
+    cd ..
+
+    if [ "$platform" = "linux" ]; then
+      buildkite-agent artifact upload electron/electron-api.json
+      buildkite-agent artifact upload electron/electron.d.ts
+    fi
   fi
 }
 
