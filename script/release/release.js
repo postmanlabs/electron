@@ -26,7 +26,8 @@ const { URL } = require('url');
 
 const { ELECTRON_DIR } = require('../lib/utils');
 
-const octokit = require('@octokit/rest')({
+const { Octokit } = require('@octokit/rest');
+const octokit = new Octokit({
   auth: process.env.ELECTRON_GITHUB_TOKEN
 });
 
@@ -195,7 +196,7 @@ async function uploadShasumFile (filePath, fileName, releaseId) {
       'content-type': 'text/plain',
       'content-length': fs.statSync(filePath).size
     },
-    file: fs.createReadStream(filePath),
+    data: fs.createReadStream(filePath),
     name: fileName
   }).catch(err => {
     console.log(`${fail} Error uploading ${filePath} to GitHub:`, err);

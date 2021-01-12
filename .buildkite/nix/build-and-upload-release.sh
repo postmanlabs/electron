@@ -68,8 +68,7 @@ buildAndUpload() {
   rm -rf out
 
   echo "--- Running gn checks"
-  if [[ "$platform" == "linux" ]]
-  then
+  if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
   else 
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
@@ -81,8 +80,7 @@ buildAndUpload() {
   gn check out/Release //electron/shell/common/api:mojo
 
   echo "--- Electron build"
-  if [[ "$platform" == "linux" ]]
-  then
+  if [ "$platform" = "linux" ]; then
     ninja -C out/Release electron -j 50
   else
     ninja -C out/Release electron -j 5

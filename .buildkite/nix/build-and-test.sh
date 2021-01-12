@@ -67,11 +67,10 @@ buildAndUpload() {
   rm -rf out
 
   echo "--- Running gn checks"
-  if [[ "$platform" == "linux" ]]
-  then
+  if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
   else 
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
   fi
   
   gn check out/Release //electron:electron_lib
@@ -84,7 +83,7 @@ buildAndUpload() {
   then
     ninja -C out/Release electron -j 25
   else 
-    ninja -C out/Release electron -j 10
+    ninja -C out/Release electron -j 50
   fi
 
   if [[ "$platform" == "linux" ]]
@@ -110,7 +109,7 @@ buildAndUpload() {
   then
     ninja -C out/Release chrome/test/chromedriver -j 75
   else 
-    ninja -C out/Release chrome/test/chromedriver -j 5
+    ninja -C out/Release chrome/test/chromedriver -j 50
   fi
   
   [[ "$platform" == "linux" ]] && electron/script/strip-binaries.py --target-cpu="x64" --file $PWD/out/Release/chromedriver
