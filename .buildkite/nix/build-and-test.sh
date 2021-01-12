@@ -67,8 +67,7 @@ buildAndUpload() {
   rm -rf out
 
   echo "--- Running gn checks"
-  if [[ "$platform" == "linux" ]]
-  then
+  if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
   else 
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
