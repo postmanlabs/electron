@@ -505,6 +505,20 @@ void NativeWindowViews::Unmaximize() {
 }
 
 bool NativeWindowViews::IsMaximized() {
+  // For window without WS_THICKFRAME style, we can not call IsMaximized().
+  // This path will be used for transparent windows as well.
+
+#if defined(OS_WIN)
+  if (!(::GetWindowLong(GetAcceleratedWidget(), GWL_STYLE) & WS_THICKFRAME)) {
+    // Compare the size of the window with the size of the display
+    auto display = display::Screen::GetScreen()->GetDisplayNearestWindow(
+        GetNativeWindow());
+    // Maximized if the window is the same dimensions and placement as the
+    // display
+    return GetBounds() == display.work_area();
+  }
+#endif
+
   return widget()->IsMaximized();
 }
 
@@ -1397,6 +1411,16 @@ views::View* NativeWindowViews::GetContentsView() {
 bool NativeWindowViews::ShouldDescendIntoChildForEventHandling(
     gfx::NativeView child,
     const gfx::Point& location) {
+  // App window should claim mouse events that fall within any BrowserViews'
+  // draggable region.
+  for (auto* view : browser_views()) {
+    auto* native_view = static_cast<NativeBrowserViewViews*>(view);
+    auto* view_draggable_region = native_view->draggable_region();
+    if (view_draggable_region &&
+        view_draggable_region->contains(location.x(), location.y()))
+      return false;
+  }
+
   // App window should claim mouse events that fall within the draggable region.
   if (draggable_region() &&
       draggable_region()->contains(location.x(), location.y()))

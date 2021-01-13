@@ -612,9 +612,10 @@ export const wrapFsWithAsar = (fs: Record<string, any>) => {
     if (options.withFileTypes) {
       const dirents = [];
       for (const file of files) {
-        const stats = archive.stat(file);
+        const childPath = path.join(filePath, file);
+        const stats = archive.stat(childPath);
         if (!stats) {
-          const error = createError(AsarError.NOT_FOUND, { asarPath, filePath: file });
+          const error = createError(AsarError.NOT_FOUND, { asarPath, filePath: childPath });
           nextTick(callback!, [error]);
           return;
         }
@@ -654,9 +655,10 @@ export const wrapFsWithAsar = (fs: Record<string, any>) => {
     if (options && (options as any).withFileTypes) {
       const dirents = [];
       for (const file of files) {
-        const stats = archive.stat(file);
+        const childPath = path.join(filePath, file);
+        const stats = archive.stat(childPath);
         if (!stats) {
-          throw createError(AsarError.NOT_FOUND, { asarPath, filePath: file });
+          throw createError(AsarError.NOT_FOUND, { asarPath, filePath: childPath });
         }
         if (stats.isFile) {
           dirents.push(new fs.Dirent(file, fs.constants.UV_DIRENT_FILE));
@@ -686,7 +688,8 @@ export const wrapFsWithAsar = (fs: Record<string, any>) => {
     if (info.size === 0) return ['', false];
     if (info.unpacked) {
       const realPath = archive.copyFileOut(filePath);
-      return fs.readFileSync(realPath, { encoding: 'utf8' });
+      const str = fs.readFileSync(realPath, { encoding: 'utf8' });
+      return [str, str.length > 0];
     }
 
     logASARAccess(asarPath, filePath, info.offset);
