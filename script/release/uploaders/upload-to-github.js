@@ -2,13 +2,13 @@ if (!process.env.CI) require('dotenv-safe').load();
 
 const fs = require('fs');
 
-const octokit = require('@octokit/rest')({
+const { Octokit } = require('@octokit/rest');
+const octokit = new Octokit({
   auth: process.env.ELECTRON_GITHUB_TOKEN
 });
 
 const owner = 'postmanlabs';
 const repo = 'electron';
-
 if (process.argv.length < 6) {
   console.log('Usage: upload-to-github filePath fileName releaseId');
   process.exit(1);
@@ -23,10 +23,10 @@ const getHeaders = (filePath, fileName) => {
   const extension = fileName.split('.').pop();
   const size = fs.statSync(filePath).size;
   const options = {
-    'json': 'text/json',
-    'zip': 'application/zip',
-    'txt': 'text/plain',
-    'ts': 'application/typescript'
+    json: 'text/json',
+    zip: 'application/zip',
+    txt: 'text/plain',
+    ts: 'application/typescript'
   };
 
   return {
@@ -43,7 +43,7 @@ function uploadToGitHub () {
   octokit.repos.uploadReleaseAsset({
     url: uploadUrl,
     headers: getHeaders(filePath, fileName),
-    file: fs.createReadStream(filePath),
+    data: fs.createReadStream(filePath),
     name: fileName
   }).then(() => {
     console.log(`Successfully uploaded ${fileName} to GitHub.`);
@@ -53,7 +53,7 @@ function uploadToGitHub () {
       console.log(`Error uploading ${fileName} to GitHub, will retry.  Error was:`, err);
       retry++;
 
-      octokit.repos.listAssetsForRelease({
+      octokit.repos.listReleaseAssets({
         owner,
         repo: targetRepo,
         release_id: releaseId,
@@ -77,7 +77,7 @@ function uploadToGitHub () {
           uploadToGitHub();
         }
       }).catch((getReleaseErr) => {
-        console.log(`Fatal: Unable to get current release assets via getRelease!  Error was:`, getReleaseErr);
+        console.log('Fatal: Unable to get current release assets via getRelease!  Error was:', getReleaseErr);
       });
     } else {
       console.log(`Error retrying uploading ${fileName} to GitHub:`, err);

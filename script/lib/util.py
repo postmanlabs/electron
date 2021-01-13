@@ -232,7 +232,7 @@ def add_exec_bit(filename):
   os.chmod(filename, os.stat(filename).st_mode | stat.S_IEXEC)
 
 def get_out_dir():
-  out_dir = 'Debug'
+  out_dir = 'Release'
   override = os.environ.get('ELECTRON_OUT_DIR')
   if override is not None:
     out_dir = override
@@ -250,7 +250,7 @@ def get_electron_exec():
     return '{0}/Electron.app/Contents/MacOS/Electron'.format(out_dir)
   elif sys.platform == 'win32':
     return '{0}/electron.exe'.format(out_dir)
-  elif sys.platform == 'linux':
+  elif sys.platform.startswith('linux'):
     return '{0}/electron'.format(out_dir)
 
   raise Exception(
@@ -268,3 +268,14 @@ def get_buildtools_executable(name):
   if sys.platform == 'win32':
     path += '.exe'
   return path
+
+def get_objcopy_path(target_cpu):
+  if PLATFORM != 'linux':
+    raise Exception(
+      "get_objcopy_path: unexpected platform '{0}'".format(PLATFORM))
+
+  if target_cpu != 'x64':
+      raise Exception(
+      "get_objcopy_path: unexpected target cpu '{0}'".format(target_cpu))
+  return os.path.join(SRC_DIR, 'third_party', 'binutils', 'Linux_x64',
+                        'Release', 'bin', 'objcopy')
