@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Juan Cruz Viotti <jv@jviotti.com>
+Date: Mon, 26 Apr 2021 12:56:00 -0400
+Subject: Increase the max_http_header_size option to 100kb to match cURL
+
+Postman is used as a debugging tool, therefore we want our HTTP parser
+to be as permissive as possible to test abnormal scenarios. Currently,
+Postman will throw with a "Parse Error: Header overflow" error if a
+server responds with an HTTP header that is greater than this limit.
+
+This commit sets `max_http_header_size` to 100kb to match cURL.
+
+See: https://github.com/postmanlabs/postman-app-support/issues/8656
+Signed-off-by: Juan Cruz Viotti <jv@jviotti.com>
+
+diff --git a/src/node_options.h b/src/node_options.h
+index 4ce5551284bb5b1b4194905a9fe619f852933405..8f167e92c79d42d61e2c1ac8bfb6c859296bb240 100644
+--- a/src/node_options.h
++++ b/src/node_options.h
+@@ -200,7 +200,7 @@ class PerProcessOptions : public Options {
+   std::string title;
+   std::string trace_event_categories;
+   std::string trace_event_file_pattern = "node_trace.${rotation}.log";
+-  uint64_t max_http_header_size = 8 * 1024;
++  uint64_t max_http_header_size = 100 * 1024;
+   int64_t v8_thread_pool_size = 4;
+   bool zero_fill_all_buffers = false;
+   bool debug_arraybuffer_allocations = false;
