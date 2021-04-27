@@ -764,11 +764,11 @@ describe('webContents module', () => {
 
       expect(() => {
         w.webContents.startDrag({ file: __filename } as any);
-      }).to.throw('Must specify non-empty \'icon\' option');
+      }).to.throw('\'icon\' parameter is required');
 
       expect(() => {
         w.webContents.startDrag({ file: __filename, icon: path.join(mainFixturesPath, 'blank.png') });
-      }).to.throw('Must specify non-empty \'icon\' option');
+      }).to.throw(/Failed to load image from path (.+)/);
     });
   });
 
@@ -1381,8 +1381,7 @@ describe('webContents module', () => {
     }
   });
 
-  // TODO (jkleinsc) - reenable this test on WOA once https://github.com/electron/electron/issues/26045 is resolved
-  ifdescribe(process.platform !== 'win32' || process.arch !== 'arm64')('did-change-theme-color event', () => {
+  describe('did-change-theme-color event', () => {
     afterEach(closeAllWindows);
     it('is triggered with correct theme color', (done) => {
       const w = new BrowserWindow({ show: true });
@@ -1785,9 +1784,14 @@ describe('webContents module', () => {
 
   describe('PictureInPicture video', () => {
     afterEach(closeAllWindows);
-    it('works as expected', async () => {
+    it('works as expected', async function () {
       const w = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
       await w.loadFile(path.join(fixturesPath, 'api', 'picture-in-picture.html'));
+
+      if (!await w.webContents.executeJavaScript('document.createElement(\'video\').canPlayType(\'video/webm; codecs="vp8.0"\')')) {
+        this.skip();
+      }
+
       const result = await w.webContents.executeJavaScript(
         `runTest(${features.isPictureInPictureEnabled()})`, true);
       expect(result).to.be.true();
@@ -1991,6 +1995,24 @@ describe('webContents module', () => {
       await w.loadURL(serverUrl);
       const body = await w.webContents.executeJavaScript('document.documentElement.textContent');
       expect(body).to.equal('401');
+    });
+  });
+
+  describe('crashed event', () => {
+    it('does not crash main process when destroying WebContents in it', (done) => {
+      const contents = (webContents as any).create({ nodeIntegration: true });
+      contents.once('crashed', () => {
+        contents.destroy();
+        done();
+      });
+      contents.loadURL('about:blank').then(() => contents.forcefullyCrashRenderer());
+    });
+
+    it('does not crash main process when quiting in it', async () => {
+      const appPath = path.join(mainFixturesPath, 'apps', 'quit', 'main.js');
+      const appProcess = ChildProcess.spawn(process.execPath, [appPath]);
+      const [code] = await emittedOnce(appProcess, 'close');
+      expect(code).to.equal(0);
     });
   });
 

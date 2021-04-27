@@ -114,6 +114,7 @@ class NativeWindowViews : public NativeWindow,
   void SetMenu(ElectronMenuModel* menu_model) override;
   void AddBrowserView(NativeBrowserView* browser_view) override;
   void RemoveBrowserView(NativeBrowserView* browser_view) override;
+  void SetTopBrowserView(NativeBrowserView* browser_view) override;
   void SetParentWindow(NativeWindow* parent) override;
   gfx::NativeView GetNativeView() const override;
   gfx::NativeWindow GetNativeWindow() const override;
@@ -173,6 +174,7 @@ class NativeWindowViews : public NativeWindow,
   void OnWidgetBoundsChanged(views::Widget* widget,
                              const gfx::Rect& bounds) override;
   void OnWidgetDestroying(views::Widget* widget) override;
+  void OnWidgetDestroyed(views::Widget* widget) override;
 
   // views::WidgetDelegate:
   void DeleteDelegate() override;
@@ -312,6 +314,7 @@ class NativeWindowViews : public NativeWindow,
   std::string title_;
   gfx::Size widget_size_;
   double opacity_ = 1.0;
+  bool widget_destroyed_ = false;
 
   DISALLOW_COPY_AND_ASSIGN(NativeWindowViews);
 };

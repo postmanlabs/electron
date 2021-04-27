@@ -99,13 +99,9 @@ BaseWindow::BaseWindow(v8::Isolate* isolate,
   window_->AddObserver(this);
 
 #if defined(TOOLKIT_VIEWS)
-  {
-    v8::TryCatch try_catch(isolate);
-    gin::Handle<NativeImage> icon;
-    if (options.Get(options::kIcon, &icon) && !icon.IsEmpty())
-      SetIcon(icon);
-    if (try_catch.HasCaught())
-      LOG(ERROR) << "Failed to convert NativeImage";
+  v8::Local<v8::Value> icon;
+  if (options.Get(options::kIcon, &icon)) {
+    SetIconImpl(isolate, icon, NativeImage::OnConvertError::kWarn);
   }
 #endif
 }
@@ -755,6 +751,14 @@ void BaseWindow::AddBrowserView(v8::Local<v8::Value> value) {
     auto get_that_view = browser_views_.find(browser_view->ID());
     if (get_that_view == browser_views_.end()) {
       if (browser_view->web_contents()) {
+        // If we're reparenting a BrowserView, ensure that it's detached from
+        // its previous owner window.
+        auto* owner_window = browser_view->web_contents()->owner_window();
+        if (owner_window && owner_window != window_.get()) {
+          owner_window->RemoveBrowserView(browser_view->view());
+          browser_view->web_contents()->SetOwnerWindow(nullptr);
+        }
+
         window_->AddBrowserView(browser_view->view());
         browser_view->web_contents()->SetOwnerWindow(window_.get());
       }
@@ -776,6 +780,25 @@ void BaseWindow::RemoveBrowserView(v8::Local<v8::Value> value) {
       (*get_that_view).second.Reset(isolate(), value);
       browser_views_.erase(get_that_view);
     }
+  }
+}
+
+void BaseWindow::SetTopBrowserView(v8::Local<v8::Value> value,
+                                   gin_helper::Arguments* args) {
+  gin::Handle<BrowserView> browser_view;
+  if (value->IsObject() &&
+      gin::ConvertFromV8(isolate(), value, &browser_view)) {
+    if (!browser_view->web_contents())
+      return;
+    auto* owner_window = browser_view->web_contents()->owner_window();
+    auto get_that_view = browser_views_.find(browser_view->ID());
+    if (get_that_view == browser_views_.end() ||
+        (owner_window && owner_window != window_.get())) {
+      args->ThrowError("Given BrowserView is not attached to the window");
+      return;
+    }
+
+    window_->SetTopBrowserView(browser_view->view());
   }
 }
 
@@ -994,14 +1017,25 @@ bool BaseWindow::SetThumbarButtons(gin_helper::Arguments* args) {
 }
 
 #if defined(TOOLKIT_VIEWS)
-void BaseWindow::SetIcon(gin::Handle<NativeImage> icon) {
+void BaseWindow::SetIcon(v8::Isolate* isolate, v8::Local<v8::Value> icon) {
+  SetIconImpl(isolate, icon, NativeImage::OnConvertError::kThrow);
+}
+
+void BaseWindow::SetIconImpl(v8::Isolate* isolate,
+                             v8::Local<v8::Value> icon,
+                             NativeImage::OnConvertError on_error) {
+  NativeImage* native_image = nullptr;
+  if (!NativeImage::TryConvertNativeImage(isolate, icon, &native_image,
+                                          on_error))
+    return;
+
 #if defined(OS_WIN)
   static_cast<NativeWindowViews*>(window_.get())
-      ->SetIcon(icon->GetHICON(GetSystemMetrics(SM_CXSMICON)),
-                icon->GetHICON(GetSystemMetrics(SM_CXICON)));
+      ->SetIcon(native_image->GetHICON(GetSystemMetrics(SM_CXSMICON)),
+                native_image->GetHICON(GetSystemMetrics(SM_CXICON)));
 #elif defined(USE_X11)
   static_cast<NativeWindowViews*>(window_.get())
-      ->SetIcon(icon->image().AsImageSkia());
+      ->SetIcon(native_image->image().AsImageSkia());
 #endif
 }
 #endif
@@ -1067,9 +1101,14 @@ void BaseWindow::ResetBrowserViews() {
                            v8::Local<v8::Value>::New(isolate(), item.second),
                            &browser_view) &&
         !browser_view.IsEmpty()) {
+      // There's a chance that the BrowserView may have been reparented - only
+      // reset if the owner window is *this* window.
       if (browser_view->web_contents()) {
-        browser_view->web_contents()->SetOwnerWindow(nullptr);
-        window_->RemoveBrowserView(browser_view->view());
+        auto* owner_window = browser_view->web_contents()->owner_window();
+        if (owner_window && owner_window == window_.get()) {
+          browser_view->web_contents()->SetOwnerWindow(nullptr);
+          owner_window->RemoveBrowserView(browser_view->view());
+        }
       }
     }
 
@@ -1190,6 +1229,7 @@ void BaseWindow::BuildPrototype(v8::Isolate* isolate,
       .SetMethod("setBrowserView", &BaseWindow::SetBrowserView)
       .SetMethod("addBrowserView", &BaseWindow::AddBrowserView)
       .SetMethod("removeBrowserView", &BaseWindow::RemoveBrowserView)
+      .SetMethod("setTopBrowserView", &BaseWindow::SetTopBrowserView)
       .SetMethod("getMediaSourceId", &BaseWindow::GetMediaSourceId)
       .SetMethod("getNativeWindowHandle", &BaseWindow::GetNativeWindowHandle)
       .SetMethod("setProgressBar", &BaseWindow::SetProgressBar)

@@ -83,8 +83,11 @@ win.show()
 * The `blur` filter only applies to the web page, so there is no way to apply
   blur effect to the content below the window (i.e. other applications open on
   the user's system).
-* On Windows operating systems, transparent windows will not work when DWM is
+* The window will not be transparent when DevTools is opened.
+* On Windows operating systems,
+  * transparent windows will not work when DWM is
   disabled.
+  * transparent windows can not be maximized using the Windows system menu or by double clicking the title bar. The reasoning behind this can be seen on [this pull request](https://github.com/electron/electron/pull/28207).
 * On Linux, users have to put `--enable-transparent-visuals --disable-gpu` in
   the command line to disable GPU and allow ARGB to make transparent window,
   this is caused by an upstream bug that [alpha channel doesn't work on some
@@ -112,13 +115,19 @@ optional parameter can be used to forward mouse move messages to the web page,
 allowing events such as `mouseleave` to be emitted:
 
 ```javascript
-const win = require('electron').remote.getCurrentWindow()
+const { ipcRenderer } = require('electron')
 const el = document.getElementById('clickThroughElement')
 el.addEventListener('mouseenter', () => {
-  win.setIgnoreMouseEvents(true, { forward: true })
+  ipcRenderer.send('set-ignore-mouse-events', true, { forward: true })
 })
 el.addEventListener('mouseleave', () => {
-  win.setIgnoreMouseEvents(false)
+  ipcRenderer.send('set-ignore-mouse-events', false)
+})
+
+// Main process
+const { ipcMain } = require('electron')
+ipcMain.on('set-ignore-mouse-events', (event, ...args) => {
+  BrowserWindow.fromWebContents(event.sender).setIgnoreMouseEvents(...args)
 })
 ```
 

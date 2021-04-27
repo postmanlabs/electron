@@ -20,6 +20,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/child_process_security_policy.h"
 #include "content/public/browser/device_service.h"
+#include "content/public/browser/download_manager.h"
 #include "content/public/browser/web_ui_controller_factory.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
@@ -276,14 +277,6 @@ int ElectronBrowserMainParts::GetExitCode() {
   return exit_code_ != nullptr ? *exit_code_ : 0;
 }
 
-void ElectronBrowserMainParts::RegisterDestructionCallback(
-    base::OnceClosure callback) {
-  // The destructors should be called in reversed order, so dependencies between
-  // JavaScript objects can be correctly resolved.
-  // For example WebContentsView => WebContents => Session.
-  destructors_.insert(destructors_.begin(), std::move(callback));
-}
-
 int ElectronBrowserMainParts::PreEarlyInitialization() {
   field_trial_list_ = std::make_unique<base::FieldTrialList>(nullptr);
 #if defined(USE_X11)
@@ -340,6 +333,9 @@ void ElectronBrowserMainParts::PostEarlyInitialization() {
   // command-line changes.
   base::FeatureList::ClearInstanceForTesting();
   InitializeFeatureList();
+
+  // Initialize field trials.
+  InitializeFieldTrials();
 
   // Initialize after user script environment creation.
   fake_browser_process_->PostEarlyInitialization();
@@ -566,16 +562,14 @@ void ElectronBrowserMainParts::PostMainMessageLoopRun() {
   FreeAppDelegate();
 #endif
 
-  // Make sure destruction callbacks are called before message loop is
-  // destroyed, otherwise some objects that need to be deleted on IO thread
-  // won't be freed.
-  // We don't use ranged for loop because iterators are getting invalided when
-  // the callback runs.
-  for (auto iter = destructors_.begin(); iter != destructors_.end();) {
-    base::OnceClosure callback = std::move(*iter);
-    if (!callback.is_null())
-      std::move(callback).Run();
-    ++iter;
+  // Shutdown the DownloadManager before destroying Node to prevent
+  // DownloadItem callbacks from crashing.
+  for (auto& iter : ElectronBrowserContext::browser_context_map()) {
+    auto* download_manager =
+        content::BrowserContext::GetDownloadManager(iter.second.get());
+    if (download_manager) {
+      download_manager->Shutdown();
+    }
   }
 
   // Destroy node platform after all destructors_ are executed, as they may

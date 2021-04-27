@@ -8,9 +8,6 @@ Process: [Main](../glossary.md#main-process)
 // In the main process.
 const { BrowserWindow } = require('electron')
 
-// Or use `remote` from the renderer process.
-// const { BrowserWindow } = require('electron').remote
-
 const win = new BrowserWindow({ width: 800, height: 600 })
 
 // Load a remote URL
@@ -733,7 +730,7 @@ The method will also not return if the extension's manifest is missing or incomp
 is emitted.
 
 **Note:** This method is deprecated. Instead, use
-[`ses.loadExtension(path)`](session.md#sesloadextensionpath).
+[`ses.loadExtension(path)`](session.md#sesloadextensionpath-options).
 
 #### `BrowserWindow.removeExtension(name)` _Deprecated_
 
@@ -775,7 +772,7 @@ The method will also not return if the extension's manifest is missing or incomp
 is emitted.
 
 **Note:** This method is deprecated. Instead, use
-[`ses.loadExtension(path)`](session.md#sesloadextensionpath).
+[`ses.loadExtension(path)`](session.md#sesloadextensionpath-options).
 
 #### `BrowserWindow.removeDevToolsExtension(name)` _Deprecated_
 
@@ -1049,7 +1046,7 @@ Returns `Boolean` - Whether the window is in simple (pre-Lion) fullscreen mode.
 
 Returns `Boolean` - Whether the window is in normal state (not maximized, not minimized, not in fullscreen mode).
 
-#### `win.setAspectRatio(aspectRatio[, extraSize])` _macOS_ _Linux_
+#### `win.setAspectRatio(aspectRatio[, extraSize])`
 
 * `aspectRatio` Float - The aspect ratio to maintain for some portion of the
 content view.
@@ -1069,6 +1066,9 @@ the player itself we would call this function with arguments of 16/9 and
 { width: 40, height: 50 }. The second argument doesn't care where the extra width and height
 are within the content view--only that they exist. Sum any extra width and
 height areas you have within the overall content view.
+
+The aspect ratio is not respected when window is resized programmingly with
+APIs like `win.setSize`.
 
 #### `win.setBackgroundColor(backgroundColor)`
 
@@ -1389,6 +1389,8 @@ The native type of the handle is `HWND` on Windows, `NSView*` on macOS, and
 
 * `message` Integer
 * `callback` Function
+  * `wParam` any - The `wParam` provided to the WndProc
+  * `lParam` any - The `lParam` provided to the WndProc
 
 Hooks a windows message. The `callback` is called when
 the message is received in the WndProc.
@@ -1441,7 +1443,7 @@ Returns `Boolean` - Whether the window's document has been edited.
 
 Returns `Promise<NativeImage>` - Resolves with a [NativeImage](native-image.md)
 
-Captures a snapshot of the page within `rect`. Omitting `rect` will capture the whole visible page.
+Captures a snapshot of the page within `rect`. Omitting `rect` will capture the whole visible page. If the page is not visible, `rect` may be empty.
 
 #### `win.loadURL(url[, options])`
 
@@ -1848,6 +1850,13 @@ Replacement API for setBrowserView supporting work with multi browser views.
 #### `win.removeBrowserView(browserView)` _Experimental_
 
 * `browserView` [BrowserView](browser-view.md)
+
+#### `win.setTopBrowserView(browserView)` _Experimental_
+
+* `browserView` [BrowserView](browser-view.md)
+
+Raises `browserView` above other `BrowserView`s attached to `win`.
+Throws an error if `browserView` is not attached to `win`.
 
 #### `win.getBrowserViews()` _Experimental_
 

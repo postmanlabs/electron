@@ -140,6 +140,7 @@
 #include "content/public/browser/file_url_loader.h"
 #include "content/public/browser/web_ui_url_loader_factory.h"
 #include "extensions/browser/api/mime_handler_private/mime_handler_private.h"
+#include "extensions/browser/api/web_request/web_request_api.h"
 #include "extensions/browser/browser_context_keyed_api_factory.h"
 #include "extensions/browser/extension_host.h"
 #include "extensions/browser/extension_message_filter.h"
@@ -1305,9 +1306,10 @@ void ElectronBrowserClient::RegisterNonNetworkNavigationURLLoaderFactories(
           context, ukm_source_id,
           false /* we don't support extensions::WebViewGuest */));
 #endif
+  // Always allow navigating to file:// URLs.
   auto* protocol_registry = ProtocolRegistry::FromBrowserContext(context);
-  protocol_registry->RegisterURLLoaderFactories(
-      URLLoaderFactoryType::kNavigation, factories);
+  protocol_registry->RegisterURLLoaderFactories(factories,
+                                                true /* allow_file_access */);
 }
 
 void ElectronBrowserClient::
@@ -1316,8 +1318,10 @@ void ElectronBrowserClient::
         NonNetworkURLLoaderFactoryMap* factories) {
   auto* protocol_registry =
       ProtocolRegistry::FromBrowserContext(browser_context);
-  protocol_registry->RegisterURLLoaderFactories(
-      URLLoaderFactoryType::kWorkerMainResource, factories);
+  // Workers are not allowed to request file:// URLs, there is no particular
+  // reason for it, and we could consider supporting it in future.
+  protocol_registry->RegisterURLLoaderFactories(factories,
+                                                false /* allow_file_access */);
 }
 
 #if BUILDFLAG(ENABLE_ELECTRON_EXTENSIONS)
@@ -1383,16 +1387,29 @@ void ElectronBrowserClient::RegisterNonNetworkSubresourceURLLoaderFactories(
     int render_frame_id,
     NonNetworkURLLoaderFactoryDeprecatedMap* uniquely_owned_factories,
     NonNetworkURLLoaderFactoryMap* factories) {
+  auto* render_process_host =
+      content::RenderProcessHost::FromID(render_process_id);
+  DCHECK(render_process_host);
+  if (!render_process_host || !render_process_host->GetBrowserContext())
+    return;
+
   content::RenderFrameHost* frame_host =
       content::RenderFrameHost::FromID(render_process_id, render_frame_id);
   content::WebContents* web_contents =
       content::WebContents::FromRenderFrameHost(frame_host);
 
+  // Allow accessing file:// subresources from non-file protocols if web
+  // security is disabled.
+  bool allow_file_access = false;
   if (web_contents) {
-    ProtocolRegistry::FromBrowserContext(web_contents->GetBrowserContext())
-        ->RegisterURLLoaderFactories(URLLoaderFactoryType::kDocumentSubResource,
-                                     factories);
+    const auto& web_preferences = web_contents->GetOrCreateWebPreferences();
+    if (!web_preferences.web_security_enabled)
+      allow_file_access = true;
   }
+
+  ProtocolRegistry::FromBrowserContext(render_process_host->GetBrowserContext())
+      ->RegisterURLLoaderFactories(factories, allow_file_access);
+
 #if BUILDFLAG(ENABLE_ELECTRON_EXTENSIONS)
   auto factory = extensions::CreateExtensionURLLoaderFactory(render_process_id,
                                                              render_frame_id);
@@ -1466,7 +1483,17 @@ bool ElectronBrowserClient::WillInterceptWebSocket(
   if (!web_request.get())
     return false;
 
-  return web_request->HasListener();
+  bool has_listener = web_request->HasListener();
+#if BUILDFLAG(ENABLE_ELECTRON_EXTENSIONS)
+  const auto* web_request_api =
+      extensions::BrowserContextKeyedAPIFactory<extensions::WebRequestAPI>::Get(
+          browser_context);
+
+  if (web_request_api)
+    has_listener |= web_request_api->MayHaveProxies();
+#endif
+
+  return has_listener;
 }
 
 void ElectronBrowserClient::CreateWebSocket(
@@ -1480,8 +1507,24 @@ void ElectronBrowserClient::CreateWebSocket(
   v8::Isolate* isolate = JavascriptEnvironment::GetIsolate();
   v8::HandleScope scope(isolate);
   auto* browser_context = frame->GetProcess()->GetBrowserContext();
+
   auto web_request = api::WebRequest::FromOrCreate(isolate, browser_context);
   DCHECK(web_request.get());
+
+#if BUILDFLAG(ENABLE_ELECTRON_EXTENSIONS)
+  if (!web_request->HasListener()) {
+    auto* web_request_api = extensions::BrowserContextKeyedAPIFactory<
+        extensions::WebRequestAPI>::Get(browser_context);
+
+    if (web_request_api && web_request_api->MayHaveProxies()) {
+      web_request_api->ProxyWebSocket(frame, std::move(factory), url,
+                                      site_for_cookies.RepresentativeUrl(),
+                                      user_agent, std::move(handshake_client));
+      return;
+    }
+  }
+#endif
+
   ProxyingWebSocket::StartProxying(
       web_request.get(), std::move(factory), url,
       site_for_cookies.RepresentativeUrl(), user_agent,
@@ -1508,6 +1551,24 @@ bool ElectronBrowserClient::WillCreateURLLoaderFactory(
   v8::HandleScope scope(isolate);
   auto web_request = api::WebRequest::FromOrCreate(isolate, browser_context);
   DCHECK(web_request.get());
+
+#if BUILDFLAG(ENABLE_ELECTRON_EXTENSIONS)
+  if (!web_request->HasListener()) {
+    auto* web_request_api = extensions::BrowserContextKeyedAPIFactory<
+        extensions::WebRequestAPI>::Get(browser_context);
+
+    DCHECK(web_request_api);
+    bool use_proxy_for_web_request =
+        web_request_api->MaybeProxyURLLoaderFactory(
+            browser_context, frame_host, render_process_id, type, navigation_id,
+            ukm_source_id, factory_receiver, header_client);
+
+    if (bypass_redirect_checks)
+      *bypass_redirect_checks = use_proxy_for_web_request;
+    if (use_proxy_for_web_request)
+      return true;
+  }
+#endif
 
   auto proxied_receiver = std::move(*factory_receiver);
   mojo::PendingRemote<network::mojom::URLLoaderFactory> target_factory_remote;

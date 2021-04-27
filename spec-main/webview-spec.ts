@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as url from 'url';
 import { BrowserWindow, session, ipcMain, app, WebContents } from 'electron/main';
 import { closeAllWindows } from './window-helpers';
 import { emittedOnce, emittedUntil } from './events-helpers';
@@ -63,7 +64,6 @@ describe('<webview> tag', function () {
       show: false,
       webPreferences: {
         webviewTag: true,
-        nodeIntegration: true,
         sandbox: true
       }
     });
@@ -76,7 +76,6 @@ describe('<webview> tag', function () {
       show: false,
       webPreferences: {
         webviewTag: true,
-        nodeIntegration: true,
         contextIsolation: true
       }
     });
@@ -89,12 +88,22 @@ describe('<webview> tag', function () {
       show: false,
       webPreferences: {
         webviewTag: true,
-        nodeIntegration: true,
         contextIsolation: true,
         sandbox: true
       }
     });
     w.loadFile(path.join(fixtures, 'pages', 'webview-isolated.html'));
+    await emittedOnce(ipcMain, 'pong');
+  });
+
+  it('works with Trusted Types', async () => {
+    const w = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        webviewTag: true
+      }
+    });
+    w.loadFile(path.join(fixtures, 'pages', 'webview-trusted-types.html'));
     await emittedOnce(ipcMain, 'pong');
   });
 
@@ -170,6 +179,31 @@ describe('<webview> tag', function () {
       const [, webContents] = await didAttachWebview;
       const [, id] = await webviewDomReady;
       expect(webContents.id).to.equal(id);
+    });
+  });
+
+  describe('did-change-theme-color event', () => {
+    it('emits when theme color changes', async () => {
+      const w = new BrowserWindow({
+        webPreferences: {
+          webviewTag: true
+        }
+      });
+      await w.loadURL('about:blank');
+      const src = url.format({
+        pathname: `${fixtures.replace(/\\/g, '/')}/pages/theme-color.html`,
+        protocol: 'file',
+        slashes: true
+      });
+      const message = await w.webContents.executeJavaScript(`new Promise((resolve, reject) => {
+        const webview = new WebView()
+        webview.setAttribute('src', '${src}')
+        webview.addEventListener('did-change-theme-color', (e) => {
+          resolve('ok')
+        })
+        document.body.appendChild(webview)
+      })`);
+      expect(message).to.equal('ok');
     });
   });
 

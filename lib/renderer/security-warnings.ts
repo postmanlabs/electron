@@ -80,7 +80,7 @@ const isUnsafeEvalEnabled: () => Promise<boolean> = function () {
   // Call _executeJavaScript to bypass the world-safe deprecation warning
   return (webFrame as any)._executeJavaScript(`(${(() => {
     try {
-      new Function(''); // eslint-disable-line no-new,no-new-func
+      eval(window.trustedTypes.emptyScript); // eslint-disable-line no-eval
     } catch {
       return false;
     }
@@ -224,7 +224,7 @@ const warnAboutExperimentalFeatures = function (webPreferences?: Electron.WebPre
 const warnAboutEnableBlinkFeatures = function (webPreferences?: Electron.WebPreferences) {
   if (!webPreferences ||
     !Object.prototype.hasOwnProperty.call(webPreferences, 'enableBlinkFeatures') ||
-    (webPreferences.enableBlinkFeatures && webPreferences.enableBlinkFeatures.length === 0)) {
+    (webPreferences.enableBlinkFeatures != null && webPreferences.enableBlinkFeatures.length === 0)) {
     return;
   }
 

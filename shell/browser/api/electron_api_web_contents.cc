@@ -22,6 +22,7 @@
 #include "base/values.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/ssl/security_state_tab_helper.h"
+#include "chrome/browser/ui/views/eye_dropper/eye_dropper.h"
 #include "content/browser/renderer_host/frame_tree_node.h"  // nogncheck
 #include "content/browser/renderer_host/render_frame_host_manager.h"  // nogncheck
 #include "content/browser/renderer_host/render_widget_host_impl.h"  // nogncheck
@@ -393,8 +394,11 @@ bool IsDeviceNameValid(const base::string16& device_name) {
 }
 
 base::string16 GetDefaultPrinterAsync() {
-  base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
-                                                base::BlockingType::MAY_BLOCK);
+#if defined(OS_WIN)
+  // Blocking is needed here because Windows printer drivers are oftentimes
+  // not thread-safe and have to be accessed on the UI thread.
+  base::ThreadRestrictions::ScopedAllowIO allow_io;
+#endif
 
   scoped_refptr<printing::PrintBackend> print_backend =
       printing::PrintBackend::CreateInstance(
@@ -411,6 +415,29 @@ base::string16 GetDefaultPrinterAsync() {
       printer_name = printers.front().printer_name;
   }
   return base::UTF8ToUTF16(printer_name);
+}
+
+// Copied from
+// chrome/browser/ui/webui/print_preview/local_printer_handler_default.cc:L36-L54
+scoped_refptr<base::TaskRunner> CreatePrinterHandlerTaskRunner() {
+  // USER_VISIBLE because the result is displayed in the print preview dialog.
+#if !defined(OS_WIN)
+  static constexpr base::TaskTraits kTraits = {
+      base::MayBlock(), base::TaskPriority::USER_VISIBLE};
+#endif
+
+#if defined(USE_CUPS)
+  // CUPS is thread safe.
+  return base::ThreadPool::CreateTaskRunner(kTraits);
+#elif defined(OS_WIN)
+  // Windows drivers are likely not thread-safe and need to be accessed on the
+  // UI thread.
+  return content::GetUIThreadTaskRunner(
+      {base::MayBlock(), base::TaskPriority::USER_VISIBLE});
+#else
+  // Be conservative on unsupported platforms.
+  return base::ThreadPool::CreateSingleThreadTaskRunner(kTraits);
+#endif
 }
 #endif
 
@@ -450,6 +477,9 @@ WebContents::WebContents(v8::Isolate* isolate,
     : content::WebContentsObserver(web_contents),
       type_(Type::REMOTE),
       id_(GetAllWebContents().Add(this)),
+#if BUILDFLAG(ENABLE_PRINTING)
+      print_task_runner_(CreatePrinterHandlerTaskRunner()),
+#endif
       weak_factory_(this) {
 #if BUILDFLAG(ENABLE_ELECTRON_EXTENSIONS)
   // WebContents created by extension host will have valid ViewType set.
@@ -485,6 +515,9 @@ WebContents::WebContents(v8::Isolate* isolate,
     : content::WebContentsObserver(web_contents.get()),
       type_(type),
       id_(GetAllWebContents().Add(this)),
+#if BUILDFLAG(ENABLE_PRINTING)
+      print_task_runner_(CreatePrinterHandlerTaskRunner()),
+#endif
       weak_factory_(this) {
   DCHECK(type != Type::REMOTE)
       << "Can't take ownership of a remote WebContents";
@@ -496,7 +529,11 @@ WebContents::WebContents(v8::Isolate* isolate,
 
 WebContents::WebContents(v8::Isolate* isolate,
                          const gin_helper::Dictionary& options)
-    : id_(GetAllWebContents().Add(this)), weak_factory_(this) {
+    : id_(GetAllWebContents().Add(this)),
+#if BUILDFLAG(ENABLE_PRINTING)
+      print_task_runner_(CreatePrinterHandlerTaskRunner()),
+#endif
+      weak_factory_(this) {
   // Read options.
   options.Get("backgroundThrottling", &background_throttling_);
 
@@ -840,7 +877,7 @@ content::WebContents* WebContents::OpenURLFromTab(
     return nullptr;
   }
 
-  if (!weak_this)
+  if (!weak_this || !web_contents())
     return nullptr;
 
   return CommonWebContentsDelegate::OpenURLFromTab(source, params);
@@ -1054,6 +1091,19 @@ void WebContents::BeforeUnloadFired(bool proceed,
 void WebContents::RenderViewCreated(content::RenderViewHost* render_view_host) {
   if (!background_throttling_)
     render_view_host->SetSchedulerThrottling(false);
+
+  // Set the background color of RenderWidgetHostView.
+  auto* const view = web_contents()->GetRenderWidgetHostView();
+  auto* web_preferences = WebContentsPreferences::From(web_contents());
+  if (view && web_preferences) {
+    std::string color_name;
+    if (web_preferences->GetPreference(options::kBackgroundColor,
+                                       &color_name)) {
+      view->SetBackgroundColor(ParseHexColor(color_name));
+    } else {
+      view->SetBackgroundColor(SK_ColorTRANSPARENT);
+    }
+  }
 }
 
 void WebContents::RenderFrameCreated(
@@ -1085,7 +1135,13 @@ void WebContents::RenderViewDeleted(content::RenderViewHost* render_view_host) {
 }
 
 void WebContents::RenderProcessGone(base::TerminationStatus status) {
+  auto weak_this = GetWeakPtr();
   Emit("crashed", status == base::TERMINATION_STATUS_PROCESS_WAS_KILLED);
+
+  // User might destroy WebContents in the crashed event.
+  if (!weak_this || !web_contents())
+    return;
+
   v8::Isolate* isolate = JavascriptEnvironment::GetIsolate();
   v8::HandleScope handle_scope(isolate);
   gin_helper::Dictionary details = gin_helper::Dictionary::CreateEmpty(isolate);
@@ -1153,7 +1209,7 @@ void WebContents::DidFinishLoad(content::RenderFrameHost* render_frame_host,
   // ⚠️WARNING!⚠️
   // Emit() triggers JS which can call destroy() on |this|. It's not safe to
   // assume that |this| points to valid memory at this point.
-  if (is_main_frame && weak_this)
+  if (is_main_frame && weak_this && web_contents())
     Emit("did-finish-load");
 }
 
@@ -1524,6 +1580,7 @@ void WebContents::WebContentsDestroyed() {
   // also do not want any method to be used, so just mark as destroyed here.
   MarkDestroyed();
 
+  Observe(nullptr);  // this->web_contents() will return nullptr
   Emit("destroyed");
 
   // For guest view based on OOPIF, the WebContents is released by the embedder
@@ -1670,23 +1727,8 @@ void WebContents::LoadURL(const GURL& url,
   // ⚠️WARNING!⚠️
   // LoadURLWithParams() triggers JS events which can call destroy() on |this|.
   // It's not safe to assume that |this| points to valid memory at this point.
-  if (!weak_this)
+  if (!weak_this || !web_contents())
     return;
-
-  // Set the background color of RenderWidgetHostView.
-  // We have to call it right after LoadURL because the RenderViewHost is only
-  // created after loading a page.
-  auto* const view = weak_this->web_contents()->GetRenderWidgetHostView();
-  if (view) {
-    auto* web_preferences = WebContentsPreferences::From(web_contents());
-    std::string color_name;
-    if (web_preferences->GetPreference(options::kBackgroundColor,
-                                       &color_name)) {
-      view->SetBackgroundColor(ParseHexColor(color_name));
-    } else {
-      view->SetBackgroundColor(SK_ColorTRANSPARENT);
-    }
-  }
 }
 
 void WebContents::DownloadURL(const GURL& url) {
@@ -2217,9 +2259,8 @@ void WebContents::Print(gin::Arguments* args) {
     settings.SetIntKey(printing::kSettingDpiVertical, dpi);
   }
 
-  base::ThreadPool::PostTaskAndReplyWithResult(
-      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
-      base::BindOnce(&GetDefaultPrinterAsync),
+  print_task_runner_->PostTaskAndReplyWithResult(
+      FROM_HERE, base::BindOnce(&GetDefaultPrinterAsync),
       base::BindOnce(&WebContents::OnGetDefaultPrinter,
                      weak_factory_.GetWeakPtr(), std::move(settings),
                      std::move(callback), device_name, silent));
@@ -2556,10 +2597,16 @@ void WebContents::StartDrag(const gin_helper::Dictionary& item,
     files.push_back(file);
   }
 
-  gin::Handle<NativeImage> icon;
-  if (!item.Get("icon", &icon) || icon->image().IsEmpty()) {
+  v8::Local<v8::Value> icon_value;
+  if (!item.Get("icon", &icon_value)) {
     gin_helper::ErrorThrower(args->isolate())
-        .ThrowError("Must specify non-empty 'icon' option");
+        .ThrowError("'icon' parameter is required");
+    return;
+  }
+
+  NativeImage* icon = nullptr;
+  if (!NativeImage::TryConvertNativeImage(args->isolate(), icon_value, &icon) ||
+      icon->image().IsEmpty()) {
     return;
   }
 
@@ -2586,6 +2633,18 @@ v8::Local<v8::Promise> WebContents::CapturePage(gin::Arguments* args) {
     promise.Resolve(gfx::Image());
     return handle;
   }
+
+#if !defined(OS_MAC)
+  // If the view's renderer is suspended this may fail on Windows/Linux -
+  // bail if so. See CopyFromSurface in
+  // content/public/browser/render_widget_host_view.h.
+  auto* rfh = web_contents()->GetMainFrame();
+  if (rfh &&
+      rfh->GetVisibilityState() == blink::mojom::PageVisibilityState::kHidden) {
+    promise.Resolve(gfx::Image());
+    return handle;
+  }
+#endif  // defined(OS_MAC)
 
   // Capture full page if user doesn't specify a |rect|.
   const gfx::Size view_size =
@@ -2915,6 +2974,12 @@ v8::Local<v8::Promise> WebContents::TakeHeapSnapshot(
   return handle;
 }
 
+std::unique_ptr<content::EyeDropper> WebContents::OpenEyeDropper(
+    content::RenderFrameHost* frame,
+    content::EyeDropperListener* listener) {
+  return ShowEyeDropper(frame, listener);
+}
+
 // static
 v8::Local<v8::ObjectTemplate> WebContents::FillObjectTemplate(
     v8::Isolate* isolate,
@@ -3112,6 +3177,33 @@ gin::Handle<WebContents> WebContents::FromOrCreate(
     gin_helper::CallMethod(isolate, api_web_contents, "_init");
   }
   return gin::CreateHandle(isolate, api_web_contents);
+}
+
+// static
+gin::Handle<WebContents> WebContents::CreateFromWebPreferences(
+    v8::Isolate* isolate,
+    const gin_helper::Dictionary& web_preferences) {
+  // Check if webPreferences has |webContents| option.
+  gin::Handle<WebContents> web_contents;
+  if (web_preferences.GetHidden("webContents", &web_contents) &&
+      !web_contents.IsEmpty()) {
+    // Set webPreferences from options if using an existing webContents.
+    // These preferences will be used when the webContent launches new
+    // render processes.
+    auto* existing_preferences =
+        WebContentsPreferences::From(web_contents->web_contents());
+    base::DictionaryValue web_preferences_dict;
+    if (gin::ConvertFromV8(isolate, web_preferences.GetHandle(),
+                           &web_preferences_dict)) {
+      existing_preferences->Clear();
+      existing_preferences->Merge(web_preferences_dict);
+    }
+  } else {
+    // Create one if not.
+    web_contents = WebContents::New(isolate, web_preferences);
+  }
+
+  return web_contents;
 }
 
 // static

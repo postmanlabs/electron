@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { v4 } from 'uuid';
 import { protocol, webContents, WebContents, session, BrowserWindow, ipcMain } from 'electron/main';
 import { AddressInfo } from 'net';
 import * as ChildProcess from 'child_process';
@@ -703,6 +704,42 @@ describe('protocol module', () => {
     });
   });
 
+  describe('protocol.registerSchemesAsPrivileged allowServiceWorkers', () => {
+    const { serviceWorkerScheme } = global as any;
+    protocol.registerStringProtocol(serviceWorkerScheme, (request, cb) => {
+      if (request.url.endsWith('.js')) {
+        cb({
+          mimeType: 'text/javascript',
+          charset: 'utf-8',
+          data: 'console.log("Loaded")'
+        });
+      } else {
+        cb({
+          mimeType: 'text/html',
+          charset: 'utf-8',
+          data: '<!DOCTYPE html>'
+        });
+      }
+    });
+    after(() => protocol.unregisterProtocol(serviceWorkerScheme));
+
+    it('should fail when registering invalid service worker', async () => {
+      await contents.loadURL(`${serviceWorkerScheme}://${v4()}.com`);
+      const wait = emittedOnce(contents, 'console-message');
+      await contents.executeJavaScript(`navigator.serviceWorker.register('${v4()}.notjs', {scope: './'}).then(() => console.log('ok')).catch(() => console.log('error'))`);
+      const [,, msg] = await wait;
+      expect(msg).to.equal('error');
+    });
+
+    it('should be able to register service worker for custom scheme', async () => {
+      await contents.loadURL(`${serviceWorkerScheme}://${v4()}.com`);
+      const wait = emittedOnce(contents, 'console-message');
+      await contents.executeJavaScript(`navigator.serviceWorker.register('${v4()}.js', {scope: './'}).then(() => console.log('ok')).catch(() => console.log('error'))`);
+      const [,, msg] = await wait;
+      expect(msg).to.equal('ok');
+    });
+  });
+
   describe.skip('protocol.registerSchemesAsPrivileged standard', () => {
     const standardScheme = (global as any).standardScheme;
     const origin = `${standardScheme}://fake-host`;
@@ -908,8 +945,12 @@ describe('protocol module', () => {
       await fs.promises.unlink(videoPath);
     });
 
-    beforeEach(async () => {
+    beforeEach(async function () {
       w = new BrowserWindow({ show: false });
+      await w.loadURL('about:blank');
+      if (!await w.webContents.executeJavaScript('document.createElement(\'video\').canPlayType(\'video/webm; codecs="vp8.0"\')')) {
+        this.skip();
+      }
     });
 
     afterEach(async () => {

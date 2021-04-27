@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/strings/pattern.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
@@ -17,6 +18,7 @@
 #include "gin/arguments.h"
 #include "gin/object_template_builder.h"
 #include "gin/per_isolate_data.h"
+#include "gin/wrappable.h"
 #include "net/base/data_url.h"
 #include "shell/common/asar/asar_util.h"
 #include "shell/common/gin_converters/file_path_converter.h"
@@ -134,6 +136,46 @@ NativeImage::~NativeImage() {
     isolate_->AdjustAmountOfExternalAllocatedMemory(-static_cast<int64_t>(
         image_.ToImageSkia()->bitmap()->computeByteSize()));
   }
+}
+
+// static
+bool NativeImage::TryConvertNativeImage(v8::Isolate* isolate,
+                                        v8::Local<v8::Value> image,
+                                        NativeImage** native_image,
+                                        OnConvertError on_error) {
+  std::string error_message;
+
+  base::FilePath icon_path;
+  if (gin::ConvertFromV8(isolate, image, &icon_path)) {
+    *native_image = NativeImage::CreateFromPath(isolate, icon_path).get();
+    if ((*native_image)->image().IsEmpty()) {
+#if defined(OS_WIN)
+      const auto img_path = base::UTF16ToUTF8(icon_path.value());
+#else
+      const auto img_path = icon_path.value();
+#endif
+      error_message = "Failed to load image from path '" + img_path + "'";
+    }
+  } else {
+    if (!gin::ConvertFromV8(isolate, image, native_image)) {
+      error_message = "Argument must be a file path or a NativeImage";
+    }
+  }
+
+  if (!error_message.empty()) {
+    switch (on_error) {
+      case OnConvertError::kThrow:
+        isolate->ThrowException(
+            v8::Exception::Error(gin::StringToV8(isolate, error_message)));
+        break;
+      case OnConvertError::kWarn:
+        LOG(WARNING) << error_message;
+        break;
+    }
+    return false;
+  }
+
+  return true;
 }
 
 #if defined(OS_WIN)
@@ -567,50 +609,6 @@ gin::WrapperInfo NativeImage::kWrapperInfo = {gin::kEmbedderNativeGin};
 }  // namespace api
 
 }  // namespace electron
-
-namespace gin {
-
-v8::Local<v8::Value> Converter<electron::api::NativeImage*>::ToV8(
-    v8::Isolate* isolate,
-    electron::api::NativeImage* val) {
-  v8::Local<v8::Object> ret;
-  if (val && val->GetWrapper(isolate).ToLocal(&ret))
-    return ret;
-  else
-    return v8::Null(isolate);
-}
-
-bool Converter<electron::api::NativeImage*>::FromV8(
-    v8::Isolate* isolate,
-    v8::Local<v8::Value> val,
-    electron::api::NativeImage** out) {
-  // Try converting from file path.
-  base::FilePath path;
-  if (ConvertFromV8(isolate, val, &path)) {
-    *out = electron::api::NativeImage::CreateFromPath(isolate, path).get();
-    if ((*out)->image().IsEmpty()) {
-#if defined(OS_WIN)
-      const auto img_path = base::UTF16ToUTF8(path.value());
-#else
-      const auto img_path = path.value();
-#endif
-      isolate->ThrowException(v8::Exception::Error(
-          StringToV8(isolate, "Image could not be created from " + img_path)));
-      return false;
-    }
-
-    return true;
-  }
-
-  // reinterpret_cast is safe here because NativeImage is the only subclass of
-  // gin::Wrappable<NativeImage>.
-  *out = static_cast<electron::api::NativeImage*>(
-      static_cast<gin::WrappableBase*>(gin::internal::FromV8Impl(
-          isolate, val, &electron::api::NativeImage::kWrapperInfo)));
-  return *out != nullptr;
-}
-
-}  // namespace gin
 
 namespace {
 

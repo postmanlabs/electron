@@ -1202,8 +1202,10 @@ void NativeWindowMac::SetBackgroundColor(SkColor color) {
 }
 
 SkColor NativeWindowMac::GetBackgroundColor() {
-  return skia::CGColorRefToSkColor(
-      [[[window_ contentView] layer] backgroundColor]);
+  CGColorRef color = [[[window_ contentView] layer] backgroundColor];
+  if (!color)
+    return SK_ColorTRANSPARENT;
+  return skia::CGColorRefToSkColor(color);
 }
 
 void NativeWindowMac::SetHasShadow(bool has_shadow) {
@@ -1297,6 +1299,30 @@ void NativeWindowMac::RemoveBrowserView(NativeBrowserView* view) {
     [view->GetInspectableWebContentsView()->GetNativeView().GetNativeNSView()
         removeFromSuperview];
   remove_browser_view(view);
+
+  [CATransaction commit];
+}
+
+void NativeWindowMac::SetTopBrowserView(NativeBrowserView* view) {
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+
+  if (!view) {
+    [CATransaction commit];
+    return;
+  }
+
+  remove_browser_view(view);
+  add_browser_view(view);
+  if (view->GetInspectableWebContentsView()) {
+    auto* native_view = view->GetInspectableWebContentsView()
+                            ->GetNativeView()
+                            .GetNativeNSView();
+    [[window_ contentView] addSubview:native_view
+                           positioned:NSWindowAbove
+                           relativeTo:nil];
+    native_view.hidden = NO;
+  }
 
   [CATransaction commit];
 }

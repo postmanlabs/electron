@@ -166,6 +166,10 @@ class WebContents : public gin::Wrappable<WebContents>,
       v8::Isolate* isolate,
       content::WebContents* web_contents);
 
+  static gin::Handle<WebContents> CreateFromWebPreferences(
+      v8::Isolate* isolate,
+      const gin_helper::Dictionary& web_preferences);
+
   // gin::Wrappable
   static gin::WrapperInfo kWrapperInfo;
   static v8::Local<v8::ObjectTemplate> FillObjectTemplate(
@@ -643,6 +647,10 @@ class WebContents : public gin::Wrappable<WebContents>,
   void InitZoomController(content::WebContents* web_contents,
                           const gin_helper::Dictionary& options);
 
+  std::unique_ptr<content::EyeDropper> OpenEyeDropper(
+      content::RenderFrameHost* frame,
+      content::EyeDropperListener* listener) override;
+
   v8::Global<v8::Value> session_;
   v8::Global<v8::Value> devtools_web_contents_;
   v8::Global<v8::Value> debugger_;
@@ -679,6 +687,10 @@ class WebContents : public gin::Wrappable<WebContents>,
   base::ObserverList<ExtendedWebContentsObserver> observers_;
 
   bool initially_shown_ = true;
+
+#if BUILDFLAG(ENABLE_PRINTING)
+  scoped_refptr<base::TaskRunner> print_task_runner_;
+#endif
 
   service_manager::BinderRegistryWithArgs<content::RenderFrameHost*> registry_;
   mojo::ReceiverSet<mojom::ElectronBrowser, content::RenderFrameHost*>
