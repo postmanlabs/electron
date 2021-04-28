@@ -71,7 +71,7 @@ buildAndUpload() {
   if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
   else 
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") $GN_EXTRA_ARGS"
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
   fi
 
   gn check out/Release //electron:electron_lib
@@ -83,7 +83,7 @@ buildAndUpload() {
   if [ "$platform" = "linux" ]; then
     ninja -C out/Release electron -j 50
   else
-    ninja -C out/Release electron -j 5
+    ninja -C out/Release electron -j 25
   fi
 
   if [[ "$platform" == "linux" ]]
