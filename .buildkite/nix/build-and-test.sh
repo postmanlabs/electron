@@ -5,7 +5,6 @@ set -euo pipefail
 
 # When the script exits or errors out, make sure to do the cleanup
 trap cleanup EXIT
-trap sccache_server_stop EXIT
 
 # platform should be one of "linux" or "darwin"
 declare platform="$1"
