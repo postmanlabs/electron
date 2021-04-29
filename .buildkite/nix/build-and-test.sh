@@ -67,23 +67,23 @@ buildAndUpload() {
   export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
 
   if [ "$platform" = "linux" ]; then
-    export SCCACHE_BIN="${PWD}/electron/external_binaries/sccache"
+    SCCACHE_BIN="${PWD}/electron/external_binaries/sccache"
   else
-    export SCCACHE_BIN="sccache"
+    SCCACHE_BIN="sccache"
   fi
 
   if [ "$platform" = "darwin" ]; 
   then
     "$SCCACHE_BIN" --stop-server 2>/dev/null || true
     "$SCCACHE_BIN" --start-server
-    "$SCCACHE_BIN" --show-stats  
+    "$SCCACHE_BIN" --show-stats
   fi
 
   echo "--- Running gn checks"
   if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") ${GN_EXTRA_ARGS}"
   else 
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"$SCCACHE_BIN\""
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"$SCCACHE_BIN\"
   fi
 
   echo "--- Running cleanup old files"
