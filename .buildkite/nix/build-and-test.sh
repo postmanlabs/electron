@@ -79,24 +79,14 @@ buildAndUpload() {
     "$SCCACHE_BIN" --show-stats
   fi
 
-  source ~/.bashrc
+  echo "--- Running cleanup old files"
+  rm -rf out
 
   echo "--- Running gn checks"
   if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") ${GN_EXTRA_ARGS}"
   else 
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"$SCCACHE_BIN\""
-  fi
-
-  echo "--- Running cleanup old files"
-  rm -rf out
-
-  echo "--- Running gn checks"
-  if [ "$platform" = "linux" ]; 
-  then
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
-  else 
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
   fi
   
   gn check out/Release //electron:electron_lib
@@ -179,7 +169,13 @@ buildAndUpload() {
     buildkite-agent artifact upload electron/electron-api.json 
     buildkite-agent artifact upload electron/electron.d.ts
   fi
-  
+
+  if [ "$platform" = "darwin" ]; 
+  then
+    "$SCCACHE_BIN" --stop-server 2>/dev/null || true
+    "$SCCACHE_BIN" --start-server
+    "$SCCACHE_BIN" --show-stats
+  fi
 }
 
 main() {
