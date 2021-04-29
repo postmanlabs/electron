@@ -72,6 +72,13 @@ buildAndUpload() {
     export SCCACHE_BIN="sccache"
   fi
 
+  if [ "$platform" = "darwin" ]; 
+  then
+    "$SCCACHE_BIN" --stop-server 2>/dev/null || true
+    "$SCCACHE_BIN" --start-server
+    "$SCCACHE_BIN" --show-stats  
+  fi
+
   echo "--- Running gn checks"
   if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") ${GN_EXTRA_ARGS}"
