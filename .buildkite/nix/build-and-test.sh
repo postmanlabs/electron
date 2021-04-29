@@ -83,14 +83,15 @@ buildAndUpload() {
   if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") ${GN_EXTRA_ARGS}"
   else 
-    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"$SCCACHE_BIN\"
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"$SCCACHE_BIN\""
   fi
 
   echo "--- Running cleanup old files"
   rm -rf out
 
   echo "--- Running gn checks"
-  if [ "$platform" = "linux" ]; then
+  if [ "$platform" = "linux" ]; 
+  then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
   else 
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\")"
