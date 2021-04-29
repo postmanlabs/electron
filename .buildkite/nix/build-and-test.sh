@@ -5,6 +5,7 @@ set -euo pipefail
 
 # When the script exits or errors out, make sure to do the cleanup
 trap cleanup EXIT
+trap sccache_server_stop EXIT
 
 # platform should be one of "linux" or "darwin"
 declare platform="$1"
@@ -60,8 +61,28 @@ buildAndUpload() {
   echo "--- Swtiching directory <pipeline>/src"
   cd ..
   
+  export SCCACHE_DIR="$HOME/.electron-build/sccache"
+  mkdir -p "$SCCACHE_DIR"
+
   export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
   export GN_EXTRA_ARGS="cc_wrapper=\"${PWD}/electron/external_binaries/sccache\""
+
+  if [ "$platform" = "linux" ]; then
+    export SCCACHE_BIN="${PWD}/electron/external_binaries/sccache"
+  else
+    export SCCACHE_BIN="sccache"
+  fi
+
+  "$SCCACHE_BIN" --stop-server 2>/dev/null || true
+  "$SCCACHE_BIN" --start-server
+  "$SCCACHE_BIN" --show-stats
+
+  echo "--- Running gn checks"
+  if [ "$platform" = "linux" ]; then
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") ${GN_EXTRA_ARGS}"
+  else 
+    gn gen out/Release --args="import(\"//electron/build/args/release.gn\") cc_wrapper=\"$SCCACHE_BIN\""
+  fi
 
   echo "--- Running cleanup old files"
   rm -rf out
@@ -153,6 +174,8 @@ buildAndUpload() {
     buildkite-agent artifact upload electron/electron-api.json 
     buildkite-agent artifact upload electron/electron.d.ts
   fi
+
+  "$SCCACHE_BIN" --stop-server 2>/dev/null || true
 }
 
 main() {
