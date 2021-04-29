@@ -79,6 +79,8 @@ buildAndUpload() {
     "$SCCACHE_BIN" --show-stats
   fi
 
+  source ~/.bashrc
+
   echo "--- Running gn checks"
   if [ "$platform" = "linux" ]; then
     gn gen out/Release --args="import(\"//electron/build/args/release.gn\") ${GN_EXTRA_ARGS}"
