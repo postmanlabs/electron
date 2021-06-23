@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: administrator <administrator@administrators-Mac-mini.local>
+Date: Wed, 23 Jun 2021 02:04:19 -0400
+Subject: Increase max response header size
+
+
+diff --git a/src/node_options.h b/src/node_options.h
+index be577703740548fa63d31e7a97ed9cd8427ba9e9..1a01d5ca3a7cec2b268a50636b511f06950a3368 100644
+--- a/src/node_options.h
++++ b/src/node_options.h
+@@ -207,7 +207,7 @@ class PerProcessOptions : public Options {
+   std::string title;
+   std::string trace_event_categories;
+   std::string trace_event_file_pattern = "node_trace.${rotation}.log";
+-  uint64_t max_http_header_size = 8 * 1024;
++  uint64_t max_http_header_size = 100 * 1024;
+   int64_t v8_thread_pool_size = 4;
+   bool zero_fill_all_buffers = false;
+   bool debug_arraybuffer_allocations = false;
